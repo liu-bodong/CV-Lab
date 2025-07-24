@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import init
 
-from Models.blocks import ConvBlock, UpConvBlock
+from models.blocks import ConvBlock, UpConvBlock
 
 class AttentionGate(nn.Module):
     """Attention Gate proposed in Attention U-Net paper. 
