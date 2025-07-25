@@ -1,5 +1,7 @@
 /archive
 /data
 /saved_models
-/runs
+*.pth
 /test_plot
+!/attention_unet_0725_2105
+*.png

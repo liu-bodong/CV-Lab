@@ -1,0 +1,29 @@
+model_type: unet
+image_size:
+- 64
+- 64
+input_channels: 3
+output_channels: 1
+channels:
+- 64
+- 128
+batch_size: 128
+epochs: 20
+lr: 0.001
+weight_decay: 1e-4
+val_split: 0.2
+optimizer: Adam
+loss: BCEWithLogitsLoss
+save_after_epochs: 15
+min_improvement: 0.01
+use_amp: false
+device:
+- cuda 0
+gpu_monitoring: true
+data_dir: ./data/kaggle_3m
+dataset: brain_mri
+save_dir: ./saved_models
+param_count: 0.45M
+flops: 1.15G
+best_epoch: 19
+best_val_dice: '0.8399'
