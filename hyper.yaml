@@ -1,0 +1,30 @@
+# Model configuration
+model_type: attention_unet
+image_size: [256, 256]
+input_channels: 3
+output_channels: 1
+channels:
+  - 64
+  - 128
+  - 256
+  - 512
+
+# Training configuration
+batch_size: 20
+epochs: 100
+lr: 0.0003
+weight_decay: 1e-4
+val_split: 0.2
+optimizer: Adam
+loss: BCEWithLogitsLoss
+save_after_epochs: 50
+min_improvement: 0.01
+use_amp: false
+
+# Other
+device:
+  - cuda 0
+gpu_monitoring: true
+data_dir: ./data/kaggle_3m
+dataset: brain_mri
+save_dir: ./saved_models

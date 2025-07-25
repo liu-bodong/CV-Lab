@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import init
     
-from models.blocks import ConvBlock, UpConvBlock
+from networks.blocks import ConvBlock, UpConvBlock
 
 class ConcatUpConvBlock(nn.Module):
     def __init__(self, ch_last, ch_skip, ch_out):

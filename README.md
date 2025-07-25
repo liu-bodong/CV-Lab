@@ -1,71 +1,20 @@
-# U-Nets
-This repository stores U-Net like segmentation frameworks.
+# Image Segmentation with U-Nets
+This repository contains code and resources for training U-Net models for image segmentation tasks.
 
 ## Requirements
 - Python 3.8+
+- PyTorch 1.7+
+- torchvision
 
 
-## Repo Structure
-U-Nets
-├── README.md
-├── requirements.txt
-├── config/
-│   ├── __init__.py
-│   ├── base_config.py
-│   ├── unet_config.py
-│   └── attention_unet_config.py
-├── data/
-│   ├── raw/
-│   │   ├── kaggle_3m/
-│   │   ├── brats2020/
-│   │   └── medical_decathlon/
-│   ├── processed/
-│   └── README.md
-├── datasets/
-│   ├── __init__.py
-│   ├── base_dataset.py
-│   ├── brain_mri_dataset.py
-│   ├── medical_segmentation_dataset.py
-│   └── transforms.py
-├── models/
-│   ├── __init__.py
-│   ├── base_model.py
-│   ├── blocks.py
-│   ├── unet/
-│   │   ├── __init__.py
-│   │   ├── vanilla_unet.py
-│   │   ├── attention_unet.py
-│   │   ├── unet_plus_plus.py
-│   │   └── residual_unet.py
-│   ├── segnet/
-│   └── deeplab/
-├── training/
-│   ├── __init__.py
-│   ├── trainer.py
-│   ├── losses.py
-│   ├── metrics.py
-│   └── callbacks.py
-├── utils/
-│   ├── __init__.py
-│   ├── visualization.py
-│   ├── logging.py
-│   └── checkpoints.py
-├── experiments/
-│   ├── unet_brain_mri/
-│   │   ├── config.yaml
-│   │   ├── train.py
-│   │   └── results/
-│   └── attention_unet_brain_mri/
-├── notebooks/
-│   ├── exploratory_data_analysis.ipynb
-│   ├── model_comparison.ipynb
-│   └── visualization.ipynb
-├── scripts/
-│   ├── train.py
-│   ├── evaluate.py
-│   ├── predict.py
-│   └── preprocess_data.py
-└── saved_models/
-    ├── unet/
-    ├── attention_unet/
-    └── checkpoints/
+## Usage
+1. Edit the `hyper.yaml` file to set your hyperparameters.
+2. Run the training script:
+   ```bash
+   python train.py --config hyper.yaml
+   ```
+3. The training logs and model checkpoints will be saved in the `runs/` directory. Each run will have its own subdirectory named with the model name and timestamp. Inside each run directory, you will find:
+   - `metrics.csv`: Metrics logged during training.
+   - `model.pth`: The trained model checkpoint.
+   - 'summary.yaml': Summary of the training configuration.
+   - 'plot.png': Visualization of training metrics.
