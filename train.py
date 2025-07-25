@@ -24,11 +24,6 @@ from src.metrics import dice_loss, dice_coefficient
 
 def train_model(config: dict):
     """
-    Handles the model training and validation process.
-
-    Args:
-        config (dict): A dictionary containing training configuration.
-
     Returns:
         tuple: A tuple containing:
             - list: A list of dictionaries with training/validation metrics per epoch.
@@ -39,6 +34,7 @@ def train_model(config: dict):
     print(f"Using device: {device}")
 
     # Create model
+    # [TODO] Need to be modified in future for flexibility
     model_type = config['model_type']
     if model_type == "unet":
         model = UNet(
@@ -65,6 +61,7 @@ def train_model(config: dict):
         val_split=config['val_split']
     )
 
+    # [TODO] Add support for different optimizers and loss functions
     # Optimizer, loss function, and AMP scaler
     optimizer = torch.optim.Adam(model.parameters(), lr=config['lr'])
     criterion = torch.nn.BCEWithLogitsLoss()
@@ -84,6 +81,7 @@ def train_model(config: dict):
             x, y = x.to(device), y.to(device)
             optimizer.zero_grad()
 
+            # [TODO] Add support for mixed precision training
             # with torch.cuda.amp.autocast(enabled=config.get('use_amp', False)):
             #     outputs = model(images)
             #     loss = criterion(outputs, masks)
@@ -134,15 +132,20 @@ def train_model(config: dict):
             'val_dice': avg_val_dice
         })
 
-        threshold = config.get('min_improvement', 0.01)
+        threshold = config.get('min_improvement', 0.001)
         save_after_epochs = config.get('save_after_epochs', 1)
         # Save best model
-        if epoch > save_after_epochs and avg_val_dice > best_val_dice + threshold:
+        if epoch > save_after_epochs and avg_val_dice >= best_val_dice + threshold:
             best_val_dice = avg_val_dice
             os.makedirs(config['save_dir'], exist_ok=True)
             best_model_path = os.path.join(config['save_dir'], f"{config['model_type']}_best.pth")
             torch.save(model.state_dict(), best_model_path)
             print(f"-> New best model saved to {best_model_path} (Dice: {best_val_dice:.4f})")
+        
+        # End if converged
+        if avg_train_loss - history[-1]['train_loss'] < 1e-5 and epoch > save_after_epochs:
+            print(f"Convergence reached at epoch {epoch + 1}. Stopping training.")
+            break
 
     return history, best_model_path
 
