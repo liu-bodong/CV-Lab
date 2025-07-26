@@ -13,6 +13,8 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 from thop import profile
 from tqdm import tqdm
+import math
+import numpy as np
 
 # Add src and networks to path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -204,16 +206,20 @@ def log_results(config: dict, history: list, best_model_path: str):
     y12 = metrics_df['val_loss']
     y2  = metrics_df['val_dice']
 
-    fig, ax1 = plt.subplots(figsize=(6, 4))
+    fig, ax1 = plt.subplots(figsize=(7, 4))
 
     # Plot Loss
-    ax1.set_xlabel('Epoch')
-    ax1.set_ylabel('Loss', color='brown', fontsize=10)
-    ax1.plot(x, y11, '-', color='brown', label='Train Loss')
-    ax1.plot(x, y12, '--', color='brown', label='Val Loss')
+    ax1.set_xlabel('Epoch', fontsize=12, loc='center')
+    ax1.set_ylabel('Loss', color='brown', fontsize=12)
+    ax1.plot(x, y11, '-', color='brown', label='Train Loss', zorder=22)
+    ax1.plot(x, y12, '--', color='brown', label='Val Loss', zorder=12)
     ax1.tick_params(axis='y', labelcolor='brown')
-    ax1.yaxis.set_major_locator(ticker.MaxNLocator(nbins=8, prune=None)) # Keep nbins consistent
-    ax1.set_ylim(bottom=0)
+    # ax1.yaxis.set_major_locator(ticker.MaxNLocator(nbins=5, prune=None)) # Keep nbins consistent
+    y1_top = math.ceil(max(y11.max(), y12.max()) * 10) / 10 # Add 10% margin
+    ax1.set_ylim(bottom=0, top=1)
+    y1_ticks = np.linspace(0, 1, num=6)
+    y1_ticks = np.insert(y1_ticks, 1, y1_ticks[0] + (y1_ticks[1] - y1_ticks[0]) / 2) # Ensure 0 is included
+    ax1.set_yticks(y1_ticks)
 
     # Set integer ticks for x-axis
     ax1.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
@@ -221,39 +227,38 @@ def log_results(config: dict, history: list, best_model_path: str):
 
     # Right y-axis for Dice
     ax2 = ax1.twinx()
-    ax2.set_ylabel('Dice Coefficient', color='darkblue', fontsize=10)
+    ax2.set_ylabel('Dice Score', color='darkblue', fontsize=12)
     ax2.plot(x, y2, '-', color='darkblue', label='Val Dice')
     ax2.tick_params(axis='y', labelcolor='darkblue')
 
-    ax2.yaxis.set_major_locator(ticker.MaxNLocator(nbins=8, prune=None)) # Keep nbins consistent
+    # ax2.yaxis.set_major_locator(ticker.MaxNLocator(nbins=10, prune=None)) # Keep nbins consistent
     ax2.set_ylim(bottom=0, top=1)
+    y2_ticks = [0.0, 0.2, 0.4, 0.6, 0.8, 0.9, 1.0]
+    ax2.set_yticks(y2_ticks)
 
 
     # Mark best epoch
-    ax2.axvline(x=best_epoch_metrics['epoch'], color='seagreen', linestyle=':', linewidth=2, label=f"Best Epoch ({best_epoch_metrics['epoch']})")
-    ax2.scatter(best_epoch_metrics['epoch'], best_epoch_metrics['val_dice'], color='sandybrown', marker='*', s=230, zorder=5, label=f"Best Dice: {best_epoch_metrics['val_dice']:.4f}")
-
-
-    # --- Consolidate Legends ---
-    # Get handles and labels from both axes
-    lines1, labels1 = ax1.get_legend_handles_labels()
-    lines2, labels2 = ax2.get_legend_handles_labels()
-
-    # Combine them
-    lines = lines1 + lines2
-    labels = labels1 + labels2
+    ax2.axvline(x=best_epoch_metrics['epoch'], color='seagreen', linestyle='--', linewidth=1.8, label=f"Best Epoch ({best_epoch_metrics['epoch']})")
+    ax2.scatter(best_epoch_metrics['epoch'], best_epoch_metrics['val_dice'], color='sandybrown', marker='*', s=200, zorder=10, label=f"Best Dice: {best_epoch_metrics['val_dice']:.4f}")
 
     # Set spines color and linewidth
     ax2.spines['left'].set_color('brown')
-    ax2.spines['left'].set_linewidth(1.5)
     ax2.spines['right'].set_color('darkblue')
-    ax2.spines['right'].set_linewidth(1.5)
+
+    ax2.spines['left'].set_linewidth(1.8)
+    ax2.spines['right'].set_linewidth(1.8)
 
     plt.tick_params(direction="out")
 
     # Create a single legend on ax1 (or ax2, or the figure)
-    legend = ax1.legend(lines, labels, fontsize=9, loc='upper left', bbox_to_anchor=(0.08, 1), frameon=True, fancybox=False, framealpha=0) # Adjust bbox_to_anchor if needed
+    fig.legend(loc='lower center', fontsize=9, frameon=False, ncol=5)
+    plt.subplots_adjust(bottom=0.18)
 
+
+    plt.title(f"Training Metrics: {config['model_type']} on {config['dataset']}", fontsize=14, pad=8)
+
+    ax1.grid(True, linestyle='--', linewidth=1, alpha=0.5, zorder=0)
+    ax2.grid(True, linestyle='--', linewidth=1, alpha=0.5, zorder=0)
     plt.title(f"Training Metrics: {config['model_type']} on {config['dataset']}",
               fontsize=14, pad=10)
     plt.savefig(os.path.join(output_dir, 'plot.png'))
