@@ -1,0 +1,39 @@
+_wandb:
+    value:
+        cli_version: 0.21.0
+        e:
+            aj48o2duj6c1u22kzf1pziyehv4aag9e:
+                codePath: notebooks/wandb.ipynb
+                codePathLocal: wandb.ipynb
+                email: liubodong04@gmail.com
+                executable: /opt/anaconda3/envs/nn/bin/python
+                git:
+                    commit: 8ea01f6b2bfe35777c4ff73ce2e147500d360840
+                    remote: git@github.com:liu-bodong/U-Nets.git
+                host: mac
+                os: macOS-15.6-arm64-arm-64bit
+                program: /Users/liubodong/Documents/dev/AI/U-Nets/notebooks/wandb.ipynb
+                python: CPython 3.12.9
+                root: /Users/liubodong/Documents/dev/AI/U-Nets/notebooks
+                startedAt: "2025-07-25T16:50:34.338852Z"
+                writerId: aj48o2duj6c1u22kzf1pziyehv4aag9e
+        m: []
+        python_version: 3.12.9
+        t:
+            "3":
+                - 2
+                - 16
+            "4": 3.12.9
+            "5": 0.21.0
+            "8":
+                - 1
+            "12": 0.21.0
+            "13": darwin-arm64
+architecture:
+    value: CNN
+dataset:
+    value: CIFAR-100
+epochs:
+    value: 10
+learning_rate:
+    value: 0.02
