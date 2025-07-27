@@ -23,7 +23,7 @@ from networks.attention_unet import AttnUNet
 import src.data_utils as data_utils
 from src.metrics import dice_loss, dice_coefficient
 
-def log_results(config: dict, history: list, best_model_path: str):
+def log_results(config: dict, history: list, best_model_path: str, last_model_path: str):
     """
     Logs training results to a unique directory.
 
@@ -31,6 +31,7 @@ def log_results(config: dict, history: list, best_model_path: str):
         config (dict): Configuration dictionary.
         history (list): List of metrics per epoch.
         best_model_path (str): Path to the best model checkpoint.
+        last_model_path (str): Path to the last model checkpoint.
     """
     if not history:
         print("No history to log. Exiting.")
@@ -62,6 +63,8 @@ def log_results(config: dict, history: list, best_model_path: str):
     summary['flops'] = f"{flops/1e9:.2f}G"
     summary['best_epoch'] = best_epoch_metrics['epoch']
     summary['best_val_dice'] = f"{best_epoch_metrics['val_dice']:.4f}"
+    summary['last_epoch'] = history[-1]['epoch']
+    summary['last_val_dice'] = f"{history[-1]['val_dice']:.4f}"
 
     with open(os.path.join(output_dir, 'summary.yaml'), 'w') as f:
         yaml.dump(summary, f, sort_keys=False)
@@ -143,3 +146,8 @@ def log_results(config: dict, history: list, best_model_path: str):
         print(f"Best model moved to {final_model_path}")
     else:
         print("Warning: Best model path not found.")
+    
+    if last_model_path and os.path.exists(last_model_path):
+        final_last_model_path = os.path.join(output_dir, os.path.basename(last_model_path))
+        os.rename(last_model_path, final_last_model_path)
+        print(f"Last model moved to {final_last_model_path}")

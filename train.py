@@ -77,6 +77,7 @@ def train_model(config: dict, run):
     history = []
     best_val_dice = 0.0
     best_model_path = None
+    best_epoch = 0
 
     for epoch in range(config['epochs']):
         # --- Training Phase ---
@@ -144,22 +145,30 @@ def train_model(config: dict, run):
             'val_dice': avg_val_dice
         })
 
-        threshold = config.get('min_improvement', 0.001)
+        min_delta = config.get('min_improvement', 0.001)
         save_after_epochs = config.get('save_after_epochs', 1)
         # Save best model
-        if epoch > save_after_epochs and avg_val_dice >= best_val_dice + threshold:
+        if epoch > save_after_epochs and avg_val_dice >= best_val_dice + min_delta:
             best_val_dice = avg_val_dice
+            best_epoch = epoch
             os.makedirs(config['save_dir'], exist_ok=True)
             best_model_path = os.path.join(config['save_dir'], f"{config['model_type']}_best.pth")
             torch.save(model.state_dict(), best_model_path)
             print(f"-> New best model saved to {best_model_path} (Dice: {best_val_dice:.4f})")
         
-        # End if converged
-        if avg_train_loss - history[-1]['train_loss'] < 1e-5 and epoch > save_after_epochs:
-            print(f"Convergence reached at epoch {epoch + 1}. Stopping training.")
+        # Wait for early convergence
+        patience = config.get('patience', 15)  # Number of epochs to wait without improvement
+        if epoch > save_after_epochs and epoch >= best_epoch + patience and avg_val_dice < best_val_dice:
+            print(f"Early stopping at epoch {epoch + 1}. No improvement for {patience} epochs since epoch {best_epoch + 1}.")
+            print(f"Best dice: {best_val_dice:.4f} at epoch {best_epoch + 1}, Current dice: {avg_val_dice:.4f}")
             break
+    # save the last epoch model
+    os.makedirs(config['save_dir'], exist_ok=True)
+    last_model_path = os.path.join(config['save_dir'], f"{config['model_type']}_last.pth")
+    torch.save(model.state_dict(), last_model_path)
+    print(f"Last model saved to {last_model_path}")
 
-    return history, best_model_path
+    return history, best_model_path, last_model_path
 
 
 def main():
@@ -185,12 +194,12 @@ def main():
         mode="offline"
     )
 
-    history, best_model_path = train_model(config, run)
+    history, best_model_path, last_model_path = train_model(config, run)
     
     run.finish()
     
     if history:
-        log_results(config, history, best_model_path)
+        log_results(config, history, best_model_path, last_model_path)
         print("--- Training and Logging Completed ---")
     else:
         print("--- Training did not produce results to log ---")
