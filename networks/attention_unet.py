@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import init
 
-from networks.blocks import ConvBlock, UpConvBlock
+from networks.blocks import DoubleConvBlock, UpConvBlock
 
 class AttentionGate(nn.Module):
     """Attention Gate proposed in Attention U-Net paper. 
@@ -57,7 +57,7 @@ class AttnUpConvBlock(nn.Module):
         super().__init__()
         self.attention_gate = AttentionGate(ch_last, ch_skip, ch_inter)
         self.upconv = UpConvBlock(ch_last, ch_skip)
-        self.conv = ConvBlock(ch_last, ch_out)
+        self.conv = DoubleConvBlock(ch_last, ch_out)
 
     def forward(self, x, g):        
         a = self.attention_gate(x, g)
@@ -71,10 +71,10 @@ class AttnUNet(nn.Module):
         
         self.maxpool = nn.MaxPool2d(kernel_size=2, stride=2)
 
-        self.in_conv = ConvBlock(in_channels, channels[0])
+        self.in_conv = DoubleConvBlock(in_channels, channels[0])
         
         self.encoder_path = nn.ModuleList(
-            [ConvBlock(channels[i], channels[i+1]) 
+            [DoubleConvBlock(channels[i], channels[i+1]) 
              for i in range(0, len(channels) - 1)])
         
         self.decoder_path = nn.ModuleList(

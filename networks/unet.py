@@ -3,13 +3,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import init
     
-from networks.blocks import ConvBlock, UpConvBlock
+from networks.blocks import DoubleConvBlock, UpConvBlock
 
 class ConcatUpConvBlock(nn.Module):
     def __init__(self, ch_last, ch_skip, ch_out):
         super().__init__()
         self.upconv = UpConvBlock(ch_last, ch_skip)
-        self.conv = ConvBlock(ch_last, ch_out)
+        self.conv = DoubleConvBlock(ch_last, ch_out)
         
     def forward(self, x, skip):
         x = self.upconv(x)
@@ -23,10 +23,10 @@ class UNet(nn.Module):
         
         self.maxpool = nn.MaxPool2d(kernel_size=2)
         
-        self.in_conv = ConvBlock(in_channels, channels[0])
+        self.in_conv = DoubleConvBlock(in_channels, channels[0])
         
         self.encoder = nn.ModuleList(
-            [ConvBlock(channels[i], channels[i+1]) 
+            [DoubleConvBlock(channels[i], channels[i+1]) 
              for i in range(0, len(channels) - 1)])
         
         self.decoder = nn.ModuleList(
