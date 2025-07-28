@@ -158,7 +158,7 @@ def train_model(config: dict, run):
         
         # Wait for early convergence
         patience = config.get('patience', 15)  # Number of epochs to wait without improvement
-        if epoch > save_after_epochs and epoch >= best_epoch + patience and avg_val_dice < best_val_dice:
+        if epoch > save_after_epochs and epoch >= best_epoch + patience and avg_val_dice < best_val_dice + min_delta:
             print(f"Early stopping at epoch {epoch + 1}. No improvement for {patience} epochs since epoch {best_epoch + 1}.")
             print(f"Best dice: {best_val_dice:.4f} at epoch {best_epoch + 1}, Current dice: {avg_val_dice:.4f}")
             break
