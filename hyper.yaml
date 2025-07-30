@@ -25,7 +25,7 @@ optimizer: Adam
 loss: BCEWithLogitsLoss
 save_after_epochs: 50
 patience: 10
-min_improvement: 0.001
+min_improvement: 0.0001
 use_amp: false
 
 # Other

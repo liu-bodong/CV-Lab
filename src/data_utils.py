@@ -23,7 +23,7 @@ def create_split_loaders(dataset: str, root_dir: str, image_size: tuple, batch_s
     transform = transforms.Compose([
         transforms.Resize(image_size),
         transforms.ToTensor(),
-        transforms.Normalize(mean=[0.5], std=[0.5])
+        transforms.Normalize(mean=[0], std=[1])
     ])
     
     # Create dataset
