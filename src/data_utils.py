@@ -23,13 +23,9 @@ def create_split_loaders(dataset: str, root_dir: str, image_size: tuple, batch_s
     transform = transforms.Compose([
         transforms.Resize(image_size),
         transforms.ToTensor(),
-<<<<<<< HEAD
         transforms.Normalize(mean=[0], std=[1])
-=======
-        # transforms.Normalize(mean=[0.5], std=[0.5])
->>>>>>> ebf6009317fe3441a33adf59d403fbd2855ca2a2
     ])
-    
+
     # Create dataset
     if dataset == "brain_mri":
         from datasets.brain_MRI_dataset import BrainMRIDataset

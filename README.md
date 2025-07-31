@@ -1,48 +1,168 @@
-# Image segmentation with deep learning
-Code and resources for training deep-learning models for image/semantic segmentation tasks. 
+# CV-Lab: Deep Learning for Image Segmentation
+
+A comprehensive framework for training and evaluating deep learning models on medical image segmentation tasks, with support for multiple architectures and datasets.
 
 ## Overview
-This repo provides a comprehensive coding and experimenting infrastructure for training, testing, logging, and analyzing deep learning models and their runs. For beginners, it is easy to use; for experienced machine learning scientists, it is versatile and very customizable for additional needs.
+
+This repository provides an end-to-end solution for image/semantic segmentation tasks, particularly focused on medical imaging. It offers a clean, modular codebase that balances ease of use for beginners with the flexibility needed by experienced researchers.
+
+### Key Highlights
+- **Multiple Architecture Support**: U-Net and Attention U-Net implementations
+- **Medical Image Focus**: Pre-configured for brain MRI, brain CT, and heart MRI datasets
+- **Research-Ready**: Comprehensive logging, visualization, and experiment tracking
+- **Production-Ready**: Model export capabilities (ONNX format)
 
 ## Features
-- Popular deep learning blocks and networks for computer vision tasks
-- Training and testing pipeline that is easy to use
-- Centralized and easy-to-use hyper-parameter tuning with `.yaml` files
-- Logging system that tracks training information and draws plots for learning, experimental, and replication purposes
-- Lightweight jupyter notebooks for quick testing, debugging, and sanity checking
-- (Optional) Incorporation of `wandb` package for logging, online monitoring, and more comprehensive analysis
+
+- **Modular Architecture**: Well-structured codebase with reusable building blocks
+- **Multiple Models**: U-Net and Attention U-Net with customizable depth and channels
+- **Comprehensive Logging**: Training metrics, loss curves, and model checkpoints
+- **Easy Configuration**: YAML-based hyperparameter management
+- **Visualization Tools**: Built-in plotting and Jupyter notebook integration
+- **Experiment Tracking**: Optional Weights & Biases (wandb) integration
+- **Model Export**: Convert trained models to ONNX format for deployment
+
+## Installation
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/liu-bodong/CV-Lab.git
+   cd CV-Lab
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
 ## Requirements
 - Python 3.8+
-- PyTorch 1.7+
-- torchvision
+- PyTorch 1.9.0+
+- torchvision 0.10.0+
+- CUDA (optional, but you definitely don't want to train on CPU)
 
-## Usage
-1. Edit the `hyper.yaml` file to set your hyper-parameters.
-2. Run the training script:
-   ```bash
-   python train.py --config [hyper-parameter file name].yaml
-   ```
-   The training pipeline by defualt uses the configuration from `hyper.yaml`. Therefore, he argument in the above command is not necessary, unless you want to use files other than `hyper.yaml` for testing purposes.
-3. The training logs and model checkpoints will be saved in the `runs/` directory. Each run will have its own subdirectory named with the model name and timestamp in the format `name_yymm__HHMM/`. Inside each run directory, you will find:
-   - `metrics.csv`: Metrics logged during training (for each epoch by default)
-   - `[model_name]_best.pth`: The trained model checkpoint at best epoch
-   - `[model_name]_last.pth`: The trained model checkpoint at last epoch
-   - `summary.yaml`: Summary of the run, including hyper-parameters used and other training info
-   - `plot.png`: Visualization of training metrics (example as follows)
-![example output](https://github.com/liu-bodong/CV-Lab/blob/main/runs/unet_0727_1906/plot.png)
+## Quick Start
 
-Additionally, you may use `wandb` package and platform for online monitoring and hyper-parameter fine-tuning. The relevant code can be easily found in `train.py`, you can modify it as how you like it to work. 
+### 1. Configure Your Experiment
+Edit the `hyper.yaml` file to set your hyperparameters:
 
-4. The `src/` directory contains useful utilities.
-   - `data_utils.py`: Utilities for loading data
-   - `logger.py`: Logger system for local logging
-   - `metrics.py`: Metrics calculation
+```yaml
+# Model configuration
+model_type: attention_unet  # or 'unet'
+image_size: [256, 256]
+input_channels: 3
+output_channels: 1
+# more...
 
-5. There are jupyter notebooks in the `notebooks/` directory for additional functionalities:
-   - `plot_csv.ipynb`: Generating plots from existing runs's `metrics.csv` file
-   - `main.ipynb`: Vlidating model and visualizing train model's output and ground truth. This is my old notebook for running everything so it contains deprecated codes, though those are usually commented out so do not worry too much
-   - `wandb.ipynb`: Testing wandb connection
-   - `model_sanity.ipynb`: Sanity check for models
-   - `export.ipynb`: Export trained `.pth` files to other formats (now only supports `.onnx`)
-   - `playground.ipynb`: A playground for anything
+# Training configuration
+batch_size: 16
+epochs: 100
+lr: 0.0003
+# more...
+```
+
+### 2. Start Training
+```bash
+python train.py --config hyper.yaml
+```
+
+> **Note**: The `--config` parameter is optional. The training pipeline uses `hyper.yaml` by default. You can optionally specify a different configuration file.
+
+*(Optional)*: Enable experiment tracking by configuring wandb in your YAML file:
+
+```yaml
+wandb_project: my_segmentation_project
+wandb_entity: your_username
+``` 
+
+> **Note**: Currently, this repository does not contain any dataset data, you are expected to download dataset and write your own preprocessing code. We might add datasets and corresponding preprocessing in future.
+
+### 3. Monitor Results
+Training outputs are automatically saved to the `runs/` directory with the following structure:
+```
+runs/
+└── [model_name]_[mmdd]_[HHMM]/
+    ├── metrics.csv              # Training metrics per epoch
+    ├── [model_name]_best.pth    # Best model checkpoint
+    ├── [model_name]_last.pth    # Final model checkpoint
+    ├── summary.yaml             # Experiment configuration and results
+    └── plot.png                 # Training curves visualization
+```
+
+![Training Example](https://github.com/liu-bodong/CV-Lab/blob/main/runs/unet_0727_1906/plot.png)
+
+## Available Models
+
+### U-Net
+Standard U-Net architecture for semantic segmentation with skip connections.
+
+### Attention U-Net
+Enhanced U-Net with attention gates for improved feature selection and localization.
+
+
+## Project Structure
+
+```
+CV-Lab/
+├── 📁 datasets/               # Dataset loading utilities
+│   └── brain_MRI_dataset.py
+├── 📁 networks/               # Model architectures
+│   ├── unet.py               # Standard U-Net implementation
+│   ├── attention_unet.py     # Attention U-Net implementation
+│   └── blocks.py             # Reusable network building blocks
+├── 📁 src/                    # Core utilities
+│   ├── data_utils.py         # Data loading and preprocessing
+│   ├── logger.py             # Training logging system
+│   └── metrics.py            # Evaluation metrics
+├── 📁 notebooks/              # Jupyter notebooks for analysis
+│   ├── main.ipynb            # Model validation and visualization
+│   ├── plot_csv.ipynb        # Generate plots from training logs
+│   ├── export.ipynb          # Model format conversion
+│   ├── model_sanity.ipynb    # Model architecture validation
+│   └── wandb.ipynb           # Weights & Biases integration
+├── 📁 runs/                   # Training experiment outputs
+├── 📁 saved_models/           # Temporary model checkpoints at training time
+├── 📄 train.py               # Main training script
+├── 📄 hyper.yaml             # Default configuration file
+└── 📄 requirements.txt       # Python dependencies
+```
+
+## Jupyter Notebooks
+
+The `notebooks/` directory provides specialized tools for different aspects of the workflow:
+
+| Notebook | Purpose |
+|----------|---------|
+| **`main.ipynb`** | Model validation, output visualization, and ground truth comparison |
+| **`plot_csv.ipynb`** | Generate custom plots from existing training metrics |
+| **`export.ipynb`** | Convert trained PyTorch models to ONNX format |
+| **`model_sanity.ipynb`** | Architecture validation and debugging |
+| **`wandb.ipynb`** | Test and configure Weights & Biases integration |
+| **`playground.ipynb`** | Experimental workspace for custom code |
+
+> **Note**: Be aware that `main.ipynb` was used for many tasks, so there exists deprecated codes, though usually commented out.
+
+## Configuration
+
+All training parameters are managed through YAML configuration files. The main configuration options include:
+
+### Model Parameters
+- `model_type`: Choose between `unet` or `attention_unet`
+- `image_size`: Input image dimensions `[height, width]`
+- `input_channels`: Number of input channels (1 for grayscale, 3 for RGB)
+- `output_channels`: Number of output classes
+- `channels`: List of channel sizes for each encoder/decoder level
+
+### Training Parameters
+- `batch_size`: Training batch size
+- `epochs`: Maximum number of training epochs
+- `lr`: Learning rate
+- `optimizer`: Optimizer type (Adam, SGD, etc.)
+- `loss`: Loss function (BCEWithLogitsLoss, etc.)
+- `patience`: Early stopping patience
+- `use_amp`: Enable automatic mixed precision training
+
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
