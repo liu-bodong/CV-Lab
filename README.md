@@ -83,8 +83,8 @@ Training outputs are automatically saved to the `runs/` directory with the follo
 runs/
 └── [model_name]_[mmdd]_[HHMM]/
     ├── metrics.csv              # Training metrics per epoch
-    ├── [model_name]_best.pth    # Best model checkpoint
-    ├── [model_name]_last.pth    # Final model checkpoint
+    ├── best.pth                 # Best model checkpoint
+    ├── last.pth                 # Final model checkpoint
     ├── summary.yaml             # Experiment configuration and results
     └── plot.png                 # Training curves visualization
 ```
@@ -99,33 +99,7 @@ Standard U-Net architecture for semantic segmentation with skip connections.
 ### Attention U-Net
 Enhanced U-Net with attention gates for improved feature selection and localization.
 
-
-## Project Structure
-
-```
-CV-Lab/
-├── 📁 datasets/               # Dataset loading utilities
-│   └── brain_MRI_dataset.py
-├── 📁 networks/               # Model architectures
-│   ├── unet.py               # Standard U-Net implementation
-│   ├── attention_unet.py     # Attention U-Net implementation
-│   └── blocks.py             # Reusable network building blocks
-├── 📁 src/                    # Core utilities
-│   ├── data_utils.py         # Data loading and preprocessing
-│   ├── logger.py             # Training logging system
-│   └── metrics.py            # Evaluation metrics
-├── 📁 notebooks/              # Jupyter notebooks for analysis
-│   ├── main.ipynb            # Model validation and visualization
-│   ├── plot_csv.ipynb        # Generate plots from training logs
-│   ├── export.ipynb          # Model format conversion
-│   ├── model_sanity.ipynb    # Model architecture validation
-│   └── wandb.ipynb           # Weights & Biases integration
-├── 📁 runs/                   # Training experiment outputs
-├── 📁 saved_models/           # Temporary model checkpoints at training time
-├── 📄 train.py               # Main training script
-├── 📄 hyper.yaml             # Default configuration file
-└── 📄 requirements.txt       # Python dependencies
-```
+### More networks and semi-supervised frameworks are under development...
 
 ## Jupyter Notebooks
 
@@ -138,7 +112,6 @@ The `notebooks/` directory provides specialized tools for different aspects of t
 | **`export.ipynb`** | Convert trained PyTorch models to ONNX format |
 | **`model_sanity.ipynb`** | Architecture validation and debugging |
 | **`wandb.ipynb`** | Test and configure Weights & Biases integration |
-| **`playground.ipynb`** | Experimental workspace for custom code |
 
 > **Note**: Be aware that `main.ipynb` was used for many tasks, so there exists deprecated codes, though usually commented out.
 

@@ -3,5 +3,4 @@
 /saved_models
 *.pth
 /test_plot
-!/attention_unet_0725_2105
 /wandb
