@@ -1,26 +1,23 @@
 # CV-Lab: Deep Learning for Image Segmentation
 
-A comprehensive framework for training and evaluating deep learning models on medical image segmentation tasks, with support for multiple architectures and datasets.
+A comprehensive, modular framework for training and evaluating deep learning models on image tasks, with support for multiple architectures, training strategies, and easy extensibility.
 
 ## Overview
 
-This repository provides an end-to-end solution for image/semantic segmentation tasks, particularly focused on medical imaging. It offers a clean, modular codebase that balances ease of use for beginners with the flexibility needed by experienced researchers.
-
-### Key Highlights
-- **Multiple Architecture Support**: U-Net and Attention U-Net implementations
-- **Medical Image Focus**: Pre-configured for brain MRI, brain CT, and heart MRI datasets
-- **Research-Ready**: Comprehensive logging, visualization, and experiment tracking
-- **Production-Ready**: Model export capabilities (ONNX format)
+This repository provides an end-to-end solution for image tasks, particularly focused on semantic segmentation. It features a **scalable, registry-based architecture** that allows easy addition of new models and training strategies without modifying core code.
 
 ## Features
 
-- **Modular Architecture**: Well-structured codebase with reusable building blocks
-- **Multiple Models**: U-Net and Attention U-Net with customizable depth and channels
+- **Registry-Based Architecture**: Scalable design pattern for easy extension of models and training strategies
+- **Multiple Models**: U-Net, Attention U-Net with customizable depth and channels
+- **Training Strategies**: Supervised and semi-supervised learning support (Mean Teacher, etc.)
+- **Docker Integration**: Containerized environment for consistent deployment and development
 - **Comprehensive Logging**: Training metrics, loss curves, and model checkpoints
-- **Easy Configuration**: YAML-based hyperparameter management
+- **Easy Configuration**: YAML-based hyperparameter management with validation
 - **Visualization Tools**: Built-in plotting and Jupyter notebook integration
 - **Experiment Tracking**: Optional Weights & Biases (wandb) integration
 - **Model Export**: Convert trained models to ONNX format for deployment
+- **Extensible Design**: Add new architectures and strategies without modifying core code
 
 ## Installation
 
@@ -48,11 +45,15 @@ Edit the `hyper.yaml` file to set your hyperparameters:
 
 ```yaml
 # Model configuration
-model_type: attention_unet  # or 'unet'
+model_type: attention_unet  # or 'unet', easily add new models
 image_size: [256, 256]
 input_channels: 3
 output_channels: 1
-# more...
+
+# Strategy-specific parameters
+strategy_params:
+  ema_decay: 0.99  # For semi-supervised strategies
+  consistency_weight: 1.0
 
 # Training configuration
 batch_size: 16
@@ -93,13 +94,15 @@ runs/
 
 ## Available Models
 
-### U-Net
-Standard U-Net architecture for semantic segmentation with skip connections.
+### U-Net based Models
+U-Net based architectures for semantic/image segmentation.
 
-### Attention U-Net
-Enhanced U-Net with attention gates for improved feature selection and localization.
+### MobileNets based Models
+Lightweight MobileNet architectures for efficient segmentation.
 
-### More networks and semi-supervised frameworks are under development...
+## Training Strategies
+
+I am developing semi-supervised frameworks, they will come soon.
 
 ## Jupyter Notebooks
 
@@ -120,7 +123,8 @@ The `notebooks/` directory provides specialized tools for different aspects of t
 All training parameters are managed through YAML configuration files. The main configuration options include:
 
 ### Model Parameters
-- `model_type`: Choose between `unet` or `attention_unet`
+- `model_type`: Choose from registered models (`unet`, `attention_unet`, or any custom registered model)
+- `training_strategy`: Select training approach (`supervised`, `mean_teacher`, etc.)
 - `image_size`: Input image dimensions `[height, width]`
 - `input_channels`: Number of input channels (1 for grayscale, 3 for RGB)
 - `output_channels`: Number of output classes
