@@ -4,3 +4,4 @@
 *.pth
 /test_plot
 /wandb
+__pycache__/
