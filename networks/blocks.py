@@ -59,10 +59,10 @@ class DepthWiseConvBlock(nn.Module):
         in_channels (int): Number of input channels.
         out_channels (int): Number of output channels.
     """
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, out_channels, stride):
         super().__init__()
         self.dw_conv = nn.Sequential(
-            nn.Conv2d(in_channels, in_channels, kernel_size=3, padding=1, stride=1, groups=in_channels),
+            nn.Conv2d(in_channels, in_channels, kernel_size=3, padding=1, stride=stride, groups=in_channels),
             nn.BatchNorm2d(in_channels),
             nn.ReLU(inplace=True),
             nn.Conv2d(in_channels, out_channels, kernel_size=1, padding=0, stride=1),
