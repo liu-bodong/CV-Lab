@@ -4,17 +4,14 @@
 # wandb configuration
 wandb_project: unet
 wandb_entity: liubodong-cornell-university  # Replace with your actual entity name
+wandb_mode: offline  # Set to 'offline' if you want to run without logging to Weights & Biases
 
 # Model configuration
 model_type: attention_unet
-image_size: [256, 256]
+image_size: [32, 32]
 input_channels: 3
 output_channels: 1
-channels:
-  - 64
-  - 128
-  - 256
-  - 512
+channels: [64, 128]
 
 # Training configuration
 batch_size: 16
@@ -29,8 +26,7 @@ min_improvement: 0.0001
 use_amp: false
 
 # Other
-device:
-  - cuda 0
+device: cuda
 gpu_monitoring: true
 data_dir: ./data/brain_Buda/kaggle_3m
 dataset: brain_mri

@@ -3,14 +3,19 @@ Brain MRI Dataset from kaggle
 """
 import torch
 from torch.utils.data import Dataset
+from torchvision import transforms
 from PIL import Image
 import os
 
 class BrainMRIDataset(Dataset):
-    def __init__(self, root_dir, transform=None):
+    def __init__(self, root_dir: str, image_size: tuple):
         self.image_mask_pairs = []
-        self.transform = transform
-
+        self.transform = transforms.Compose([
+            transforms.Resize(image_size),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])  # Normalize to [-1, 1]
+        ])
+    
         # Loop through all patient folders
         for patient_folder in os.listdir(root_dir):
             patient_path = os.path.join(root_dir, patient_folder)

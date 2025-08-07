@@ -19,19 +19,13 @@ def create_split_loaders(dataset: str, root_dir: str, image_size: tuple, batch_s
     Returns:
         tuple: Training and validation DataLoaders
     """
-    # Define transformations
-    transform = transforms.Compose([
-        transforms.Resize(image_size),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0], std=[1])
-    ])
 
     # Create dataset
     if dataset == "brain_mri":
-        from datasets.brain_MRI_dataset import BrainMRIDataset
+        from src.datasets import BrainMRIDataset
         CustomDataset = BrainMRIDataset
-    dataset = CustomDataset(root_dir, transform=transform)
-    
+    dataset = CustomDataset(root_dir, image_size=image_size)
+
     # Split dataset into training and validation sets
     train_size = int((1 - val_split) * len(dataset))
     val_size = len(dataset) - train_size

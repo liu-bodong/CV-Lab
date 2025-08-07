@@ -8,10 +8,7 @@ This repository provides an end-to-end solution for image tasks, particularly fo
 
 ## Features
 
-- **Registry-Based Architecture**: Scalable design pattern for easy extension of models and training strategies
 - **Multiple Models**: U-Net, Attention U-Net with customizable depth and channels
-- **Training Strategies**: Supervised and semi-supervised learning support (Mean Teacher, etc.)
-- **Docker Integration**: Containerized environment for consistent deployment and development
 - **Comprehensive Logging**: Training metrics, loss curves, and model checkpoints
 - **Easy Configuration**: YAML-based hyperparameter management with validation
 - **Visualization Tools**: Built-in plotting and Jupyter notebook integration
@@ -24,7 +21,6 @@ This repository provides an end-to-end solution for image tasks, particularly fo
 1. **Clone the repository:**
    ```bash
    git clone https://github.com/liu-bodong/CV-Lab.git
-   cd CV-Lab
    ```
 
 2. **Install dependencies:**
@@ -45,15 +41,11 @@ Edit the `hyper.yaml` file to set your hyperparameters:
 
 ```yaml
 # Model configuration
-model_type: attention_unet  # or 'unet', easily add new models
-image_size: [256, 256]
+model_type: unet
+image_size: [256, 256]  # Input image size
 input_channels: 3
 output_channels: 1
-
-# Strategy-specific parameters
-strategy_params:
-  ema_decay: 0.99  # For semi-supervised strategies
-  consistency_weight: 1.0
+channels: [64, 128, 256, 512]  # Encoder/decoder channel sizes
 
 # Training configuration
 batch_size: 16
@@ -67,16 +59,18 @@ lr: 0.0003
 python train.py --config hyper.yaml
 ```
 
+> **Note**: Currently, this repository does not contain any dataset data, you are expected to download dataset and write your own preprocessing code. We might add datasets and corresponding preprocessing in future.
+
 > **Note**: The `--config` parameter is optional. The training pipeline uses `hyper.yaml` by default. You can optionally specify a different configuration file.
 
 *(Optional)*: Enable experiment tracking by configuring wandb in your YAML file:
 
 ```yaml
-wandb_project: my_segmentation_project
+wandb_project: my_project
 wandb_entity: your_username
+wandb_mode: online
 ``` 
 
-> **Note**: Currently, this repository does not contain any dataset data, you are expected to download dataset and write your own preprocessing code. We might add datasets and corresponding preprocessing in future.
 
 ### 3. Monitor Results
 Training outputs are automatically saved to the `runs/` directory with the following structure:

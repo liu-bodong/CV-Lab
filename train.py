@@ -69,8 +69,20 @@ def train_model(config: dict, run):
 
     # [TODO] Add support for different optimizers and loss functions
     # Optimizer, loss function, and AMP scaler
-    optimizer = torch.optim.Adam(model.parameters(), lr=config['lr'])
-    criterion = torch.nn.BCEWithLogitsLoss()
+    optimizer_type = config.get('optimizer', 'SGD')
+    optimizer = getattr(torch.optim, optimizer_type)(
+        model.parameters(),
+        lr=config['lr'],
+        weight_decay=config.get('weight_decay', 0.0),
+        betas=config.get('betas', (0.9, 0.999))
+    )
+
+    loss_function_type = config.get('loss', 'BCEWithLogitsLoss')
+    criterion = getattr(torch.nn, loss_function_type)()
+
+    # optimizer = torch.optim.Adam(model.parameters(), lr=config['lr'])
+    # criterion = torch.nn.BCEWithLogitsLoss()
+    
     scaler = None #torch.cuda.amp.GradScaler(enabled=config.get('use_amp', False))
 
     # Training loop
