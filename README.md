@@ -4,7 +4,7 @@ A comprehensive, modular framework for training and evaluating deep learning mod
 
 ## Overview
 
-This repository provides an end-to-end solution for image tasks, particularly focused on semantic segmentation. It features a **scalable, registry-based architecture** that allows easy addition of new models and training strategies without modifying core code.
+This repository provides an end-to-end solution for image tasks, semantic segmentation and classification. It features a **scalable, reflection-based architecture** that allows easy extension without modifying core code.
 
 ## Features
 
@@ -41,7 +41,8 @@ Edit the `hyper.yaml` file to set your hyperparameters:
 
 ```yaml
 # Model configuration
-model_type: unet
+module_name: unet  # The module name (file name) where the model is defined
+model_type: UNet   # The model's class name to instantiate, pay attention to the case
 image_size: [256, 256]  # Input image size
 input_channels: 3
 output_channels: 1
@@ -92,7 +93,7 @@ runs/
 U-Net based architectures for semantic/image segmentation.
 
 ### MobileNets based Models
-Lightweight MobileNet architectures for efficient segmentation.
+Lightweight MobileNet architectures.
 
 ## Training Strategies
 
@@ -117,7 +118,8 @@ The `notebooks/` directory provides specialized tools for different aspects of t
 All training parameters are managed through YAML configuration files. The main configuration options include:
 
 ### Model Parameters
-- `model_type`: Choose from registered models (`unet`, `attention_unet`, or any custom registered model)
+- `module_name`: Name of the module where the model is defined (e.g., `unet`, `attention_unet`, etc.)
+- `model_type`: Choose from defined models (`UNet`, `AttentionUNet`, or any custom model classes)
 - `training_strategy`: Select training approach (`supervised`, `mean_teacher`, etc.)
 - `image_size`: Input image dimensions `[height, width]`
 - `input_channels`: Number of input channels (1 for grayscale, 3 for RGB)

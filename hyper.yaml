@@ -7,14 +7,15 @@ wandb_entity: liubodong-cornell-university  # Replace with your actual entity na
 wandb_mode: offline  # Set to 'offline' if you want to run without logging to Weights & Biases
 
 # Model configuration
-model_type: attention_unet
+module_name: unet
+model_type: UNet
 image_size: [32, 32]
 input_channels: 3
 output_channels: 1
 channels: [64, 128]
 
 # Training configuration
-batch_size: 16
+batch_size: 2
 epochs: 100
 lr: 0.0003
 val_split: 0.2

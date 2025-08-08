@@ -20,8 +20,7 @@ import wandb
 # Add src and networks to path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from networks.unet import UNet
-from networks.attention_unet import AttnUNet
+import networks
 import src.data_utils as data_utils
 from src.metrics import dice_loss, dice_coefficient
 from src.logger import log_results
@@ -38,24 +37,22 @@ def train_model(config: dict, run):
     # Setup device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
+    
+    
 
     # Create model
     # [TODO] Need to be modified in future for flexibility
+    module_name = config['module_name']
     model_type = config['model_type']
-    if model_type == "unet":
-        model = UNet(
-            in_channels=config['input_channels'],
-            out_channels=config['output_channels'],
-            channels=config['channels']
-        )
-    elif model_type == "attention_unet":
-        model = AttnUNet(
-            in_channels=config['input_channels'],
-            out_channels=config['output_channels'],
-            channels=config['channels']
-        )
-    else:
-        raise ValueError(f"Unknown model type: {model_type}")
+    
+    module = getattr(networks, module_name)
+
+    model = getattr(module, model_type)(
+        in_channels=config['input_channels'],
+        out_channels=config['output_channels'],
+        channels=config['channels']
+    )
+
     model.to(device)
 
     # Create data loaders
@@ -79,9 +76,6 @@ def train_model(config: dict, run):
 
     loss_function_type = config.get('loss', 'BCEWithLogitsLoss')
     criterion = getattr(torch.nn, loss_function_type)()
-
-    # optimizer = torch.optim.Adam(model.parameters(), lr=config['lr'])
-    # criterion = torch.nn.BCEWithLogitsLoss()
     
     scaler = None #torch.cuda.amp.GradScaler(enabled=config.get('use_amp', False))
 
@@ -205,7 +199,7 @@ def main():
         name=f"{config['model_type']}_{datetime.now().strftime('%m%d_%H%M')}",
         mode="offline"
     )
-
+    
     history, best_model_path, last_model_path = train_model(config, run)
     
     run.finish()
