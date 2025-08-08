@@ -7,7 +7,7 @@ wandb_entity: liubodong-cornell-university  # Replace with your actual entity na
 wandb_mode: offline  # Set to 'offline' if you want to run without logging to Weights & Biases
 
 # Model configuration
-module_name: unet
+model_source: unet
 model_type: UNet
 image_size: [32, 32]
 input_channels: 3

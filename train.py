@@ -21,9 +21,7 @@ import wandb
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 import networks
-import src.data_utils as data_utils
-from src.metrics import dice_loss, dice_coefficient
-from src.logger import log_results
+from src import data_utils, logger, metrics, rampups, utils
 
 run = None  # Global variable for wandb run
 
@@ -42,10 +40,10 @@ def train_model(config: dict, run):
 
     # Create model
     # [TODO] Need to be modified in future for flexibility
-    module_name = config['module_name']
+    model_source = config['model_source']
     model_type = config['model_type']
-    
-    module = getattr(networks, module_name)
+
+    module = getattr(networks, model_source)
 
     model = getattr(module, model_type)(
         in_channels=config['input_channels'],
@@ -66,10 +64,11 @@ def train_model(config: dict, run):
 
     # [TODO] Add support for different optimizers and loss functions
     # Optimizer, loss function, and AMP scaler
+    initial_lr = config.get('lr')
     optimizer_type = config.get('optimizer', 'SGD')
     optimizer = getattr(torch.optim, optimizer_type)(
         model.parameters(),
-        lr=config['lr'],
+        lr=initial_lr,
         weight_decay=config.get('weight_decay', 0.0),
         betas=config.get('betas', (0.9, 0.999))
     )
@@ -84,13 +83,15 @@ def train_model(config: dict, run):
     best_val_dice = 0.0
     best_model_path = None
     best_epoch = 0
+    
+    total_epochs = config.get('epochs')
 
-    for epoch in range(config['epochs']):
+    for epoch in range(total_epochs):
         # --- Training Phase ---
         model.train()
         train_loss_epoch = 0.0
-        
-        for x, y in tqdm(train_loader, desc=f"Epoch {epoch+1}/{config['epochs']} [T]", leave=False):
+
+        for x, y in tqdm(train_loader, desc=f"Epoch {epoch+1}/{total_epochs} [T]", leave=False):
             x, y = x.to(device), y.to(device)
             optimizer.zero_grad()
 
@@ -106,10 +107,11 @@ def train_model(config: dict, run):
             y_pred = model(x)
             loss = criterion(y_pred, y)
             loss.backward()
+            lr *= rampups.cosine_rampdown(epoch, total_epochs)
             optimizer.step()
-            
-            
-            train_loss_epoch += loss.item()
+
+            for param_group in optimizer.param_groups:
+                param_group['lr'] = lr
 
         avg_train_loss = train_loss_epoch / len(train_loader)
 
@@ -122,7 +124,7 @@ def train_model(config: dict, run):
                 x, y = x.to(device), y.to(device)
                 outputs = model(x)
                 loss = criterion(outputs, y)
-                dice = dice_coefficient(outputs, y)
+                dice = metrics.dice_coefficient(outputs, y)
 
                 val_loss_epoch += loss.item()
                 val_dice_epoch += dice.item()
@@ -205,7 +207,7 @@ def main():
     run.finish()
     
     if history:
-        log_results(config, history, best_model_path, last_model_path)
+        logger.log_results(config, history, best_model_path, last_model_path)
         print("--- Training and Logging Completed ---")
     else:
         print("--- Training did not produce results to log ---")

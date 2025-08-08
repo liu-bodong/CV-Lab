@@ -8,6 +8,7 @@ This repository provides an end-to-end solution for image tasks, semantic segmen
 
 ## Features
 
+- **Reflection-Based Architecture**: Easily extendable with new models and training strategies
 - **Multiple Models**: U-Net, Attention U-Net with customizable depth and channels
 - **Comprehensive Logging**: Training metrics, loss curves, and model checkpoints
 - **Easy Configuration**: YAML-based hyperparameter management with validation
@@ -118,7 +119,7 @@ The `notebooks/` directory provides specialized tools for different aspects of t
 All training parameters are managed through YAML configuration files. The main configuration options include:
 
 ### Model Parameters
-- `module_name`: Name of the module where the model is defined (e.g., `unet`, `attention_unet`, etc.)
+- `model_source`: Name of the module where the model is defined (e.g., `unet`, `attention_unet`, etc.)
 - `model_type`: Choose from defined models (`UNet`, `AttentionUNet`, or any custom model classes)
 - `training_strategy`: Select training approach (`supervised`, `mean_teacher`, etc.)
 - `image_size`: Input image dimensions `[height, width]`
@@ -130,8 +131,10 @@ All training parameters are managed through YAML configuration files. The main c
 - `batch_size`: Training batch size
 - `epochs`: Maximum number of training epochs
 - `lr`: Learning rate
-- `optimizer`: Optimizer type (Adam, SGD, etc.)
-- `loss`: Loss function (BCEWithLogitsLoss, etc.)
+- `optimizer`: PyTorch optimizer type (e.g., `Adam`, `SGD`), pay attention to the spelling and case
+- `loss`: PyTorch loss function (e.g., `BCEWithLogitsLoss`, `CrossEntropyLoss`), pay attention to the spelling and case
+- `save_after_epochs`: Save model checkpoints every N epochs
+- `val_split`: Fraction of data to use for validation
 - `patience`: Early stopping patience
 - `use_amp`: Enable automatic mixed precision training
 
