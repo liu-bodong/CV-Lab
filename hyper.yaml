@@ -12,12 +12,12 @@ model_type: UNet
 image_size: [256, 256]
 input_channels: 3
 output_channels: 1
-channels: [32, 64, 128, 256]
+channels: [64, 128, 256, 512]
 
 # Training configuration
-batch_size: 16
+batch_size: 20
 epochs: 100
-lr: 0.0003
+lr: 0.0007
 val_split: 0.2
 optimizer: Adam
 loss: BCEWithLogitsLoss

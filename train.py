@@ -64,11 +64,11 @@ def train_model(config: dict, run):
 
     # [TODO] Add support for different optimizers and loss functions
     # Optimizer, loss function, and AMP scaler
-    initial_lr = config.get('lr')
+    lr = config.get('lr')
     optimizer_type = config.get('optimizer', 'SGD')
     optimizer = getattr(torch.optim, optimizer_type)(
         model.parameters(),
-        lr=initial_lr,
+        lr=lr,
         weight_decay=config.get('weight_decay', 0.0),
         betas=config.get('betas', (0.9, 0.999))
     )
@@ -106,6 +106,7 @@ def train_model(config: dict, run):
             
             y_pred = model(x)
             loss = criterion(y_pred, y)
+            train_loss_epoch += loss.item()
             loss.backward()
             lr *= rampups.cosine_rampdown(epoch, total_epochs)
             optimizer.step()

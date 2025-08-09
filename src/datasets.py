@@ -13,7 +13,7 @@ class BrainMRIDataset(Dataset):
         self.transform = transforms.Compose([
             transforms.Resize(image_size),
             transforms.ToTensor(),
-            transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])  # Normalize to [-1, 1]
+            transforms.Normalize(0.5, 0.5)
         ])
     
         # Loop through all patient folders
