@@ -108,11 +108,11 @@ def train_model(config: dict, run):
             loss = criterion(y_pred, y)
             train_loss_epoch += loss.item()
             loss.backward()
-            lr *= rampups.cosine_rampdown(epoch, total_epochs)
+            # lr *= rampups.cosine_rampdown(epoch, total_epochs)
             optimizer.step()
 
-            for param_group in optimizer.param_groups:
-                param_group['lr'] = lr
+            # for param_group in optimizer.param_groups:
+                # param_group['lr'] = lr
 
         avg_train_loss = train_loss_epoch / len(train_loader)
 
