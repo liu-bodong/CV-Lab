@@ -65,15 +65,15 @@ def train_model(config: dict, run):
     # [TODO] Add support for different optimizers and loss functions
     # Optimizer, loss function, and AMP scaler
     lr = config.get('lr')
-    optimizer_type = config.get('optimizer', 'SGD')
+    optimizer_type = config.get('optimizer')
     optimizer = getattr(torch.optim, optimizer_type)(
         model.parameters(),
         lr=lr,
-        weight_decay=config.get('weight_decay', 0.0),
-        betas=config.get('betas', (0.9, 0.999))
+        # weight_decay=config.get('weight_decay', 0.0),
+        # betas=config.get('betas', (0.9, 0.999))
     )
 
-    loss_function_type = config.get('loss', 'BCEWithLogitsLoss')
+    loss_function_type = config.get('loss')
     criterion = getattr(torch.nn, loss_function_type)()
     
     scaler = None #torch.cuda.amp.GradScaler(enabled=config.get('use_amp', False))
