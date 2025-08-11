@@ -1,5 +1,5 @@
 /archive
-/data
+/data/*
 /saved_models
 *.pth
 /test_plot
