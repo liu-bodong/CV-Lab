@@ -17,9 +17,10 @@ channels: [64, 128, 256, 512]
 # Training configuration
 batch_size: 20
 epochs: 100
-lr: 0.0006
+lr: 0.0005
+lr_rampdown_epochs: 120
 val_split: 0.2
-optimizer: Adam
+optimizer: SGD
 loss: BCEWithLogitsLoss
 save_after_epochs: 50
 patience: 20

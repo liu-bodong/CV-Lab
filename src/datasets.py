@@ -2,6 +2,7 @@
 Brain MRI Dataset from kaggle
 """
 import torch
+import nibabel as nb
 from torch.utils.data import Dataset
 from torchvision import transforms
 from PIL import Image
@@ -46,3 +47,4 @@ class BrainMRIDataset(Dataset):
         mask = (mask > 0).float()  # Binary mask
 
         return image, mask
+    

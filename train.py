@@ -64,19 +64,22 @@ def train_model(config: dict, run):
 
     # [TODO] Add support for different optimizers and loss functions
     # Optimizer, loss function, and AMP scaler
+    
     lr = config.get('lr')
+    lr_rampdown_epochs = config.get('lr_rampdown_epochs', total_epochs)
     optimizer_type = config.get('optimizer')
+    
     optimizer = getattr(torch.optim, optimizer_type)(
         model.parameters(),
         lr=lr,
-        # weight_decay=config.get('weight_decay', 0.0),
-        # betas=config.get('betas', (0.9, 0.999))
+        weight_decay=config.get('weight_decay', None),
+        betas=config.get('betas', None)
     )
 
     loss_function_type = config.get('loss')
     criterion = getattr(torch.nn, loss_function_type)()
     
-    scaler = None #torch.cuda.amp.GradScaler(enabled=config.get('use_amp', False))
+    scaler = torch.cuda.amp.GradScaler(enabled=config.get('use_amp', False))
 
     # Training loop
     history = []
@@ -92,27 +95,7 @@ def train_model(config: dict, run):
         train_loss_epoch = 0.0
 
         for x, y in tqdm(train_loader, desc=f"Epoch {epoch+1}/{total_epochs} [T]", leave=False):
-            x, y = x.to(device), y.to(device)
-            optimizer.zero_grad()
-
-            # [TODO] Add support for mixed precision training
-            # with torch.cuda.amp.autocast(enabled=config.get('use_amp', False)):
-            #     outputs = model(images)
-            #     loss = criterion(outputs, masks)
-            
-            # scaler.scale(loss).backward()
-            # scaler.step(optimizer)
-            # scaler.update()
-            
-            y_pred = model(x)
-            loss = criterion(y_pred, y)
-            train_loss_epoch += loss.item()
-            loss.backward()
-            lr *= rampups.cosine_rampdown(epoch, total_epochs)
-            optimizer.step()
-
-            for param_group in optimizer.param_groups:
-                param_group['lr'] = lr
+            train_loss_epoch = train_loop(x, y, model, criterion, optimizer, device, epoch, lr_rampdown_epochs, scaler, total_epochs, lr)
 
         avg_train_loss = train_loss_epoch / len(train_loader)
 
@@ -179,6 +162,25 @@ def train_model(config: dict, run):
     print(f"Last model saved to {last_model_path}")
 
     return history, best_model_path, last_model_path
+
+
+def train_loop(x, y, model, criterion, optimizer, device, epoch, lr_rampdown_epochs, scaler, total_epochs, lr):
+    x, y = x.to(device), y.to(device)
+    optimizer.zero_grad()
+
+    # Mixed precision training
+    y_pred = model(x)
+    loss = criterion(y_pred, y)
+
+    scaler.scale(loss).backward()
+    lr *= rampups.cosine_rampdown(epoch, lr_rampdown_epochs)
+    scaler.step(optimizer)
+    scaler.update()
+
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = lr
+
+    return loss.item()
 
 
 def main():
