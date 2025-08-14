@@ -211,9 +211,14 @@ def mean_teacher(config: dict, run):
     teacher.to(device)
 
     # Create data loaders
-    train_labeled_loader: DataLoader
-    train_unlabeled_loader: DataLoader
-    test_loader: DataLoader
+    labeled_train_loader, unlabeled_train_loader, val_loader = data_utils.create_split_loaders_semi_supervised(
+        dataset=config['dataset'],
+        root_dir=config['data_dir'],
+        image_size=(config['image_height'], config['image_width']),
+        batch_size=config['batch_size'],
+        label_split=config.get('label_split', 0.2),
+        val_split=config.get('val_split', 0.2)
+    )
 
     # [TODO] Add support for different optimizers and loss functions
     # Optimizer, loss function, and AMP scaler
