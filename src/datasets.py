@@ -1,22 +1,26 @@
-"""
-Brain MRI Dataset from kaggle
-"""
+# Datasets 
+
 import torch
-import nibabel as nb
 from torch.utils.data import Dataset
-from torchvision import transforms
 from PIL import Image
+from torchvision import transforms
 import os
 
 class BrainMRIDataset(Dataset):
-    def __init__(self, root_dir: str, image_size: tuple):
+    def __init__(self, root_dir, transform=None, image_size: tuple = (256, 256)):
         self.image_mask_pairs = []
-        self.transform = transforms.Compose([
-            transforms.Resize(image_size),
-            transforms.ToTensor(),
-            transforms.Normalize(0.5, 0.5)
-        ])
-    
+        self.image_size = image_size
+        
+        if transform is None:
+            transform = transforms.Compose([
+                transforms.Resize(image_size),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.5], std=[0.5]),
+            ])
+        
+        self.transform = transform
+        
+
         # Loop through all patient folders
         for patient_folder in os.listdir(root_dir):
             patient_path = os.path.join(root_dir, patient_folder)
@@ -47,4 +51,3 @@ class BrainMRIDataset(Dataset):
         mask = (mask > 0).float()  # Binary mask
 
         return image, mask
-    
