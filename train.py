@@ -18,12 +18,14 @@ import math
 import numpy as np
 import wandb
 
+from utils import logger
+
 
 # Add src and networks to path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 import networks
-from src import data_utils, logger, metrics, rampups, utils
+from src import data_utils, metrics, rampups, utils
 
 run = None  # Global variable for wandb run
 
