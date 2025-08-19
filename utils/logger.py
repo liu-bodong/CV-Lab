@@ -20,8 +20,9 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from networks.unet import UNet
 from networks.attention_unet import AttnUNet
-import src.data_utils as data_utils
-from src.metrics import dice_loss, dice_coefficient
+from metrics import dice_loss, dice_coefficient
+
+__all__ = ['log_results']
 
 def log_results(config: dict, history: list, best_model_path: str, last_model_path: str):
     """

@@ -10,8 +10,9 @@ ramp length in the same format, and returns a multiplier between
 0 and 1.
 """
 
-
 import numpy as np
+
+__all__ = ['sigmoid_rampup', 'linear_rampup', 'cosine_rampdown']
 
 
 def sigmoid_rampup(current, rampup_length):

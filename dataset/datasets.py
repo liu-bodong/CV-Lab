@@ -6,6 +6,8 @@ from PIL import Image
 from torchvision import transforms
 import os
 
+__all__ = ['BrainMRIDataset']
+
 class BrainMRIDataset(Dataset):
     def __init__(self, root_dir, transform=None, image_size: tuple = (256, 256)):
         self.image_mask_pairs = []

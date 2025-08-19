@@ -25,7 +25,9 @@ from utils import logger
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 import networks
-from src import data_utils, metrics, rampups, utils
+import dataset
+import networks
+import utils
 
 run = None  # Global variable for wandb run
 
@@ -42,12 +44,8 @@ def train_model(config: dict, run):
 
     # Create model
     # [TODO] Need to be modified in future for flexibility
-    model_source = config['model_source']
-    model_type = config['model_type']
 
-    module = getattr(networks, model_source)
-
-    model = getattr(module, model_type)(
+    model = getattr(networks, config['model_type'])(
         in_channels=config['input_channels'],
         out_channels=config['output_channels'],
         channels=config['channels']
@@ -56,7 +54,7 @@ def train_model(config: dict, run):
     model.to(device)
 
     # Create data loaders
-    train_loader, val_loader = data_utils.create_split_loaders(
+    train_loader, val_loader = dataset.create_split_loaders(
         dataset=config['dataset'],
         root_dir=config['data_dir'],
         image_size=tuple(config['image_size']),
@@ -110,7 +108,7 @@ def train_model(config: dict, run):
                 x, y = x.to(device), y.to(device)
                 outputs = model(x)
                 loss = criterion(outputs, y)
-                dice = metrics.dice_coefficient(outputs, y)
+                dice = utils.dice_coefficient(outputs, y)
 
                 val_loss_epoch += loss.item()
                 val_dice_epoch += dice.item()

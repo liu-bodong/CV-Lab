@@ -4,8 +4,9 @@
 # MetricDict and Metric classes are adapted from 
 # https://github.com/CuriousAI/mean-teacher
 
-
 import sys
+
+__all__ = ['MetricDict', 'Metric']
 
 class MetricDict:
     def __init__(self):
