@@ -1,12 +1,12 @@
 # Workflow git cheatsheet
 
-- master - production version
+- main - production version
 - dev    - development version
 
 Workflow:
 1. develop on `dev` branch
-2. after testing, sync `dev` with `master`
-3. use `master` for production deployments
+2. after testing, sync `dev` with `main`
+3. use `main` for production deployments
 
 Everyday development flow:
 
@@ -31,15 +31,15 @@ Ready to publish to production env:
 git checkout dev
 git pull origin dev
 
-# 2. Switch to master branch
-git checkout master
+# 2. Switch to main branch
+git checkout main
 
-# 3. Merge dev branch into master
+# 3. Merge dev branch into main
 git merge dev
 
-# 4. Push updated master to remote
-git push origin master
+# 4. Push updated main to remote
+git push origin main
 
-# 5. Now can deploy master branch to production environment
+# 5. Now can deploy main branch to production environment
 ```
 
