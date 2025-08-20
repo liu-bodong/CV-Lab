@@ -25,7 +25,7 @@ from utils import logger
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 import networks
-import dataset
+import datasets
 import networks
 import utils
 
@@ -54,7 +54,7 @@ def train_model(config: dict, run):
     model.to(device)
 
     # Create data loaders
-    train_loader, val_loader = dataset.create_split_loaders(
+    train_loader, val_loader = datasets.create_split_loaders(
         dataset=config['dataset'],
         root_dir=config['data_dir'],
         image_size=tuple(config['image_size']),

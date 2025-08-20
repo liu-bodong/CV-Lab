@@ -11,7 +11,7 @@ __all__ = ['create_split_loaders']
 def create_split_loaders(dataset: str, root_dir: str, image_size: tuple, batch_size: int, val_split: float = 0.2):
     """
     Create training and validation data loaders.
-    
+                 
     Args:
         dataset (str): Name of the dataset
         root_dir (str): Directory containing the dataset
@@ -29,7 +29,7 @@ def create_split_loaders(dataset: str, root_dir: str, image_size: tuple, batch_s
     #     CustomDataset = BrainMRIDataset
     # dataset = CustomDataset(root_dir, image_size=image_size)
     
-    dataset = getattr(dataset, dataset)(root_dir, image_size)
+    dataset = getattr(datasets, dataset)(root_dir, image_size)
 
     # Split dataset into training and validation sets
     train_size = int((1 - val_split) * len(dataset))
