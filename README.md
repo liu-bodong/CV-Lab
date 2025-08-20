@@ -1,27 +1,26 @@
 # CV-Lab: Deep Learning for Image Segmentation
 
-A comprehensive, modular framework for training and evaluating deep learning models on image tasks, with support for multiple architectures, training strategies, and easy extensibility.
+A modular framework for training and evaluating deep learning models on image segmentation tasks. While it does not offer fine-grained solutions out of the box, it is *ideal* for learning, rapid prototyping, and validating research ideas. The codebase is well-documented and straightforward to support both learning and easy extension.
 
 ## Overview
 
-This repository provides an end-to-end solution for image tasks, semantic segmentation and classification. It features a **scalable, reflection-based architecture** that allows easy extension without modifying core code.
+This repository provides tools for image segmentation using deep learning. It features a clean, modular codebase with support for common segmentation architectures and standard training workflows.
 
-## Features
-
-- **Reflection-Based Architecture**: Easily extendable with new models and training strategies
-- **Multiple Models**: U-Net, Attention U-Net with customizable depth and channels
-- **Comprehensive Logging**: Training metrics, loss curves, and model checkpoints
-- **Easy Configuration**: YAML-based hyperparameter management with validation
-- **Visualization Tools**: Built-in plotting and Jupyter notebook integration
-- **Experiment Tracking**: Optional Weights & Biases (wandb) integration
-- **Model Export**: Convert trained models to ONNX format for deployment
-- **Extensible Design**: Add new architectures and strategies without modifying core code
+### Features
+- **Multiple Architectures**: U-Net and Attention U-Net implementations
+- **Modular Design**: Organized code structure with separate modules for datasets, networks, and utilities
+- **Dynamic Configuration**: Reflection mechanism for automatic configuration loading and scalability
+- **Configuration Management**: YAML-based hyperparameter configuration
+- **Training Pipeline**: Standard training loop with validation and checkpointing
+- **Experiment Tracking**: Optional Weights & Biases integration
+- **Model Export**: ONNX format support for deployment
 
 ## Installation
 
 1. **Clone the repository:**
    ```bash
    git clone https://github.com/liu-bodong/CV-Lab.git
+   cd CV-Lab
    ```
 
 2. **Install dependencies:**
@@ -33,111 +32,114 @@ This repository provides an end-to-end solution for image tasks, semantic segmen
 - Python 3.8+
 - PyTorch 1.9.0+
 - torchvision 0.10.0+
-- CUDA (optional, but you definitely don't want to train on CPU)
+- CUDA
+
+## Project Structure
+Each sub-directory functions as a module with specified export components to be called using reflection.
+
+```
+CV-Lab/
+├── datasets/         # Dataset classes and data loading utilities
+├── networks/         # Model architectures (U-Net, Attention U-Net)
+├── utils/            # Training utilities (logging, metrics, loss functions)
+├── notebooks/        # Jupyter notebooks for analysis and visualization
+├── runs/             # Training outputs and model checkpoints
+├── train.py          # Main training script
+└── hyper.yaml        # Configuration file
+```
 
 ## Quick Start
 
-### 1. Configure Your Experiment
-Edit the `hyper.yaml` file to set your hyperparameters:
+### 1. Prepare Your Dataset
+Implement your dataset class in `datasets/` or use the provided datasets as a reference. The framework expects dataset classes to return image-mask pairs.
+
+### 2. Configure Training
+Edit `hyper.yaml` to set your parameters. Note that the framework uses a dynamic configuration system implemented by reflection in python. Each sub-module exports classes and methods to be used. Please pay attention to the exact naming of imported components. Refer to the following example for a glimpse of hyper parameter editing:
 
 ```yaml
 # Model configuration
-module_name: unet  # The module name (file name) where the model is defined
-model_type: UNet   # The model's class name to instantiate, pay attention to the case
-image_size: [256, 256]  # Input image size
+model_type: ModelClass  
+image_size: [256, 256]
 input_channels: 3
 output_channels: 1
-channels: [64, 128, 256, 512]  # Encoder/decoder channel sizes
+channels: [64, 128, 256, 512] # for frameworks that require specific channel sizes
 
 # Training configuration
 batch_size: 16
 epochs: 100
-lr: 0.0003
-# more...
+init_lr: 0.0003
+dataset: DatasetClass
+data_dir: ./data/your_dataset
 ```
 
-### 2. Start Training
+### 3. Start Training
 ```bash
 python train.py --config hyper.yaml
 ```
 
-> **Note**: Currently, this repository does not contain any dataset data, you are expected to download dataset and write your own preprocessing code. We might add datasets and corresponding preprocessing in future.
-
-> **Note**: The `--config` parameter is optional. The training pipeline uses `hyper.yaml` by default. You can optionally specify a different configuration file.
-
-*(Optional)*: Enable experiment tracking by configuring wandb in your YAML file:
-
-```yaml
-wandb_project: my_project
-wandb_entity: your_username
-wandb_mode: online
-``` 
-
-
-### 3. Monitor Results
-Training outputs are automatically saved to the `runs/` directory with the following structure:
+### 4. Monitor Results
+Training outputs are saved to the `runs/` directory:
 ```
-runs/
-└── [model_name]_[mmdd]_[HHMM]/
-    ├── metrics.csv              # Training metrics per epoch
-    ├── best.pth                 # Best model checkpoint
-    ├── last.pth                 # Final model checkpoint
-    ├── summary.yaml             # Experiment configuration and results
-    └── plot.png                 # Training curves visualization
+runs/[model_name]_[timestamp]/
+├── metrics.csv      # Training metrics
+├── best.pth         # Best model checkpoint
+├── last.pth         # Final checkpoint
+├── summary.yaml     # Run configuration
+└── plot.png         # Training curves
 ```
-
+An example of plot.png:
 ![Training Example](https://github.com/liu-bodong/CV-Lab/blob/main/runs/unet_0727_1906/plot.png)
 
 ## Available Models
 
-### U-Net based Models
-U-Net based architectures for semantic/image segmentation.
+Currently, the framework supports the following models:
+- ResNet50/101
+- MobileNetV1
+- U-Net
+- Attention U-Net
+- more models are under development, feel free to add your own too!
 
-### MobileNets based Models
-Lightweight MobileNet architectures.
+## Datasets
 
-## Training Strategies
+The framework includes a `BrainMRIDataset` class corresponding to a [dataset on kaggle](https://www.kaggle.com/datasets/mateuszbuda/lgg-mri-segmentation) as an example implementation. You can create custom dataset classes for your needs.
 
-I am developing semi-supervised frameworks, they will come soon.
+### BrainMRIDataset
+- Loads image-mask pairs from organized directory structure
+- Applies separate transforms for images and masks
+- Supports common medical image formats
 
-## Jupyter Notebooks
-
-The `notebooks/` directory provides specialized tools for different aspects of the workflow:
-
-| Notebook | Purpose |
-|----------|---------|
-| **`main.ipynb`** | Model validation, output visualization, and ground truth comparison |
-| **`plot_csv.ipynb`** | Generate custom plots from existing training metrics |
-| **`export.ipynb`** | Convert trained PyTorch models to ONNX format |
-| **`model_sanity.ipynb`** | Architecture validation and debugging |
-| **`wandb.ipynb`** | Test and configure Weights & Biases integration |
-
-> **Note**: Be aware that `main.ipynb` was used for many tasks, so there exists deprecated codes, though usually commented out.
-
-## Configuration
-
-All training parameters are managed through YAML configuration files. The main configuration options include:
+## Configuration Options
 
 ### Model Parameters
-- `model_source`: Name of the module where the model is defined (e.g., `unet`, `attention_unet`, etc.)
-- `model_type`: Choose from defined models (`UNet`, `AttentionUNet`, or any custom model classes)
-- `training_strategy`: Select training approach (`supervised`, `mean_teacher`, etc.)
-- `image_size`: Input image dimensions `[height, width]`
-- `input_channels`: Number of input channels (1 for grayscale, 3 for RGB)
+- `model_type`: Model architecture
+- `image_size`: Input dimensions `[height, width]`
+- `input_channels`: Number of input channels
 - `output_channels`: Number of output classes
-- `channels`: List of channel sizes for each encoder/decoder level
+- `channels`: A list of channel sizes -- channel progression for encoder/decoder
 
 ### Training Parameters
 - `batch_size`: Training batch size
-- `epochs`: Maximum number of training epochs
-- `lr`: Learning rate
-- `optimizer`: PyTorch optimizer type (e.g., `Adam`, `SGD`), pay attention to the spelling and case
-- `loss`: PyTorch loss function (e.g., `BCEWithLogitsLoss`, `CrossEntropyLoss`), pay attention to the spelling and case
-- `save_after_epochs`: Save model checkpoints every N epochs
-- `val_split`: Fraction of data to use for validation
-- `patience`: Early stopping patience
-- `use_amp`: Enable automatic mixed precision training
+- `epochs`: Number of training epochs
+- `init_lr`: Initial learning rate
+- `dataset`: Dataset class name
+- `data_dir`: Path to dataset
+- `val_split`: Validation split ratio
 
+### Optional Features
+- **Weights & Biases**: Set `wandb_project`, `wandb_entity`, and `wandb_mode` for experiment tracking
+- **Early Stopping**: Configure `patience` for convergence early stopping
+- **Learning Rate Scheduling**: Use `lr_rampdown_epochs` for learning rate decay
+
+
+## Jupyter Notebooks
+
+The `notebooks/` directory contains tools for analysis and visualization:
+
+- **`main.ipynb`**: Model validation and output visualization
+- **`plot_csv.ipynb`**: Generate plots from training metrics
+- **`export.ipynb`**: Convert models to ONNX format
+- **`model_sanity.ipynb`**: Architecture testing and debugging
+- **`wandb.ipynb`**: Weights & Biases integration testing
 
 ## License
 
