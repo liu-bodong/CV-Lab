@@ -9,18 +9,28 @@ import os
 __all__ = ['BrainMRIDataset']
 
 class BrainMRIDataset(Dataset):
-    def __init__(self, root_dir, transform=None, image_size: tuple = (256, 256)):
+    def __init__(self, root_dir, image_size: tuple, transform=None, ):
         self.image_mask_pairs = []
         self.image_size = image_size
         
         if transform is None:
-            transform = transforms.Compose([
+            # Image transforms (with normalization)
+            self.image_transform = transforms.Compose([
                 transforms.Resize(image_size),
                 transforms.ToTensor(),
-                transforms.Normalize(mean=[0.5], std=[0.5]),
+                transforms.Normalize(mean=[0.5], std=[0.5])
             ])
+        else:
+            self.image_transform = transform
         
-        self.transform = transform
+        # Mask transforms (no normalization, just resize and convert to tensor)
+        self.mask_transform = transforms.Compose([
+            transforms.Resize(image_size),
+            transforms.ToTensor()
+        ])
+        
+        print(f"Image transform: {self.image_transform}")
+        print(f"Mask transform: {self.mask_transform}")
         
 
         # Loop through all patient folders
@@ -46,9 +56,9 @@ class BrainMRIDataset(Dataset):
         image = Image.open(img_path).convert("RGB")
         mask = Image.open(mask_path).convert("L")
 
-        if self.transform:
-            image = self.transform(image)
-            mask = self.transform(mask)
+        # Apply different transforms for image and mask
+        image = self.image_transform(image)
+        mask = self.mask_transform(mask)
 
         mask = (mask > 0).float()  # Binary mask
 

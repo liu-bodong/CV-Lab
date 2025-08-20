@@ -5,6 +5,9 @@ from torch.nn import init
     
 from networks.blocks import DoubleConvBlock, UpConvBlock
 
+__all__ = ['UNet']
+
+
 class ConcatUpConvBlock(nn.Module):
     def __init__(self, ch_last, ch_skip, ch_out):
         super().__init__()

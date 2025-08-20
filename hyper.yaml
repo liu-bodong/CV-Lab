@@ -7,7 +7,6 @@ wandb_entity: liubodong-cornell-university  # Replace with your actual entity na
 wandb_mode: offline  # Set to 'offline' if you want to run without logging to Weights & Biases
 
 # Model configuration
-model_source: unet
 model_type: UNet
 image_size: [256, 256]
 input_channels: 3
@@ -17,7 +16,7 @@ channels: [64, 128, 256, 512]
 # Training configuration
 batch_size: 20
 epochs: 100
-lr: 0.0005
+init_lr: 0.0003
 lr_rampdown_epochs: 120
 val_split: 0.2
 optimizer: SGD
@@ -25,11 +24,11 @@ loss: BCEWithLogitsLoss
 save_after_epochs: 50
 patience: 20
 min_improvement: 0.0001
-use_amp: false
+use_amp: true
 
 # Other
 device: cuda
 gpu_monitoring: true
-data_dir: ./data/brain_Buda/kaggle_3m
-dataset: brain_mri
+data_dir: ./data/brain_MRI_Buda/kaggle_3m
+dataset: BrainMRIDataset
 save_dir: ./saved_models

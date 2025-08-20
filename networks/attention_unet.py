@@ -5,6 +5,9 @@ from torch.nn import init
 
 from networks.blocks import DoubleConvBlock, UpConvBlock
 
+__all__ = ['AttnUNet']
+
+
 class AttentionGate(nn.Module):
     """Attention Gate proposed in Attention U-Net paper. 
     

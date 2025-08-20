@@ -5,6 +5,8 @@ from torch.nn import init
 
 from networks.blocks import DepthWiseConvBlock
 
+__all__ = ['MobileNetV1']
+
 class MobileNetV1(nn.Module):
     def __init__(self, in_channels, n_classes, channels=[32,64,128,256,512,1024]):
         super(MobileNetV1, self).__init__()
