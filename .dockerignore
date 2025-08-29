@@ -1,0 +1,24 @@
+# Ignore Python cache
+__pycache__/
+*.pyc
+
+# Ignore virtual environments
+.venv/
+env/
+venv/
+
+# Ignore WandB logs and runs
+wandb/
+
+# Ignore Jupyter checkpoints
+.ipynb_checkpoints/
+
+# Ignore Git
+.git
+.gitignore
+
+# Ignore data
+/data*
+
+# Ignore notebooks
+/notebooks

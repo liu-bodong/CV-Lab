@@ -369,11 +369,12 @@ def main():
     print("-----------------------------")
 
     run = wandb.init(
+        dir="/wandb",
         project=config.get('wandb_project'),
         entity=config.get('wandb_entity'),
         config=config,
         name=f"{config['model_type']}_{datetime.now().strftime('%m%d_%H%M')}",
-        mode="offline"
+        mode=config.get('wandb_mode', 'offline')
     )
     
     history, best_model_path, last_model_path = train_model(config, run)
