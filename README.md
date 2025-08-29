@@ -17,6 +17,7 @@ This repository provides tools for image segmentation using deep learning. It fe
 
 ## Installation
 
+### Option 1: Local Installation
 1. **Clone the repository:**
    ```bash
    git clone https://github.com/liu-bodong/CV-Lab.git
@@ -28,11 +29,102 @@ This repository provides tools for image segmentation using deep learning. It fe
    pip install -r requirements.txt
    ```
 
+### Option 2: Docker (Recommended)
+For a consistent environment with GPU support:
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/liu-bodong/CV-Lab.git
+   cd CV-Lab
+   ```
+
+2. **Using Docker Compose (Recommended):**
+   ```bash
+   docker-compose up -d dev
+   docker-compose exec dev bash
+   ```
+
+3. **Using Docker directly:**
+   ```bash
+   # Build the image
+   docker build -t cv-lab .
+   
+   # Run with GPU support
+   docker run --gpus all -v $(pwd):/app -it cv-lab bash
+   ```
+
+### Option 3: Pre-built Docker Images
+Use pre-built images without building locally:
+
+1. **From GitHub Container Registry:**
+   ```bash
+   # Pull the image
+   docker pull ghcr.io/liu-bodong/cv-lab:latest
+   
+   # Clone repository for code and configs
+   git clone https://github.com/liu-bodong/CV-Lab.git
+   cd CV-Lab
+   
+   # Run with pre-built image
+   docker run --gpus all -v $(pwd):/app -it ghcr.io/liu-bodong/cv-lab:latest bash
+   ```
+
+2. **From Docker Hub:**
+   ```bash
+   # Pull the image
+   docker pull liubodong/cv-lab:latest
+
+   # Clone repository for code and configs
+   git clone https://github.com/liu-bodong/CV-Lab.git
+   cd CV-Lab
+   
+   # Run with pre-built image
+   docker run --gpus all -v $(pwd):/app -it liubodong/cv-lab:latest bash
+   ```
+
+3. **Using Docker Compose with pre-built image:**
+   ```yaml
+   # Modify docker-compose.yml to use pre-built image:
+   services:
+     dev:
+       image: ghcr.io/liu-bodong/cv-lab:latest
+       # Remove the 'build' section
+   ```
+
+**Benefits of pre-built images:**
+- No build time required
+- Consistent environment across different machines
+- Faster setup for CI/CD pipelines
+- Pre-tested configurations
+
+### Local Build vs Pre-built Images
+4. **Start training:**
+   ```bash
+   python train.py --config hyper.yaml
+   ```
+
+### Docker Configuration
+- **Base Image**: PyTorch 2.7.1 with CUDA 12.8 and cuDNN 9
+- **GPU Support**: Automatic GPU detection and usage
+- **Volume Mounting**: Code, data, and outputs are mounted for persistence
+- **Development**: Interactive development with live code changes
+- **Pre-built Images**: Available on GitHub Container Registry and Docker Hub
+- **Image Options**: Build locally or use pre-built images for faster setup
+
 ## Requirements
+
+### For Local Installation:
 - Python 3.8+
 - PyTorch 1.9.0+
 - torchvision 0.10.0+
-- CUDA
+- CUDA (optional, for GPU acceleration)
+
+### For Docker Installation:
+- Docker
+- Docker Compose
+- NVIDIA Docker runtime (for GPU support)
+
+> **Note**: Docker installation includes all Python dependencies and CUDA support automatically.
 
 ## Project Structure
 Each sub-directory functions as a module with specified export components to be called using reflection.
@@ -73,6 +165,21 @@ data_dir: ./data/your_dataset
 ```
 
 ### 3. Start Training
+
+**Local Environment:**
+```bash
+python train.py --config hyper.yaml
+```
+
+**Docker Environment:**
+```bash
+# Start container and enter interactive shell
+docker-compose up -d dev
+docker-compose exec dev bash
+
+# Run training inside container
+python train.py --config hyper.yaml
+```
 ```bash
 python train.py --config hyper.yaml
 ```
@@ -89,6 +196,51 @@ runs/[model_name]_[timestamp]/
 ```
 An example of plot.png:
 ![Training Example](https://github.com/liu-bodong/CV-Lab/blob/main/runs/unet_0727_1906/plot.png)
+
+## Docker Development Workflow
+
+### Development Container
+The Docker setup is optimized for development with live code changes:
+
+```bash
+# Start development container
+docker-compose up -d dev
+
+# Enter container shell
+docker-compose exec dev bash
+
+# Your code changes in the host are immediately reflected in the container
+# Data and outputs persist in mounted volumes
+```
+
+### Volume Mounts
+- **Code**: `.:/app` - Live code editing
+- **Data**: `./data:/app/data` - Persistent dataset storage  
+- **Outputs**: `./runs:/app/runs` - Training results persist on host
+- **Wandb**: `./wandb:/app/wandb` - Experiment tracking logs
+
+### GPU Support
+The container automatically detects and uses available GPUs:
+```yaml
+deploy:
+  resources:
+    reservations:
+      devices:
+        - driver: nvidia
+          capabilities: [gpu]
+```
+
+### Container Management
+```bash
+# Stop container
+docker-compose down
+
+# Rebuild after requirements.txt changes
+docker-compose build dev
+
+# View logs
+docker-compose logs dev
+```
 
 ## Available Models
 
