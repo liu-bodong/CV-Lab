@@ -53,11 +53,15 @@ def train_model(config: dict, run):
 
     model.to(device)
 
-    # Create data loaders
-    train_loader, val_loader = datasets.create_split_loaders(
-        dataset=config['dataset'],
+    dataset = getattr(datasets, config['dataset'])(
         root_dir=config['data_dir'],
         image_size=tuple(config['image_size']),
+        transform=None,
+    )
+
+    # Create data loaders
+    train_loader, val_loader = datasets.create_split_loaders(
+        dataset=dataset,
         batch_size=config['batch_size'],
         val_split=config['val_split']
     )

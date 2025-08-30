@@ -4,7 +4,6 @@ numpy==2.3.2
 pandas==2.3.2
 Pillow==11.3.0
 PyYAML==6.0.2
-PyYAML==6.0.2
 scipy==1.16.1
 thop==0.1.1.post2209072238
 torch==2.7.1+cu128

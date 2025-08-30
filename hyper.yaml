@@ -31,4 +31,4 @@ device: cuda
 gpu_monitoring: true
 data_dir: ./data/brain_MRI_Buda/kaggle_3m
 dataset: BrainMRIDataset
-save_dir: ./saved_models
+save_dir: ./temp

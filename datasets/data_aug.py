@@ -1,282 +1,230 @@
-import os
-import random
-import h5py
-import itertools
-import numpy as np
-from scipy import ndimage
-from scipy.ndimage.interpolation import zoom
+"""
+Essential augmentation utilities for image segmentation tasks.
+Provides simple, reusable augmentation functions that can be easily applied to any dataset.
+"""
 
 import torch
-from torch.utils.data.sampler import Sampler
-from torch.utils.data import Dataset
-from torchvision import transforms
-from PIL import Image, ImageOps, ImageFilter
+import torchvision.transforms as transforms
+import torchvision.transforms.functional as TF
+import numpy as np
+from PIL import Image, ImageFilter
+import random
+from typing import Tuple, Optional, Union, List
+import albumentations as A
+
+__all__ = ["random_rotation", "random_flip", "random_crop", "color_jitter"]
 
 
-class BaseDataSets(Dataset):
-    def __init__(
-        self,
-        base_dir=None,
-        split="train",
-        num=None,
-        transform=None,
-        ops_weak=None,
-        ops_strong=None,
-    ):
-        self._base_dir = base_dir
-        self.sample_list = []
-        self.split = split
-        self.transform = transform
-        self.ops_weak = ops_weak
-        self.ops_strong = ops_strong
-
-        assert bool(ops_weak) == bool(
-            ops_strong
-        ), "For using CTAugment learned policies, provide both weak and strong batch augmentation policy"
-
-        if self.split == "train":
-            with open(self._base_dir + "/train_slices.list", "r") as f1:
-                self.sample_list = f1.readlines()
-            self.sample_list = [item.replace("\n", "") for item in self.sample_list]
-
-        elif self.split == "val":
-            with open(self._base_dir + "/val.list", "r") as f:
-                self.sample_list = f.readlines()
-            self.sample_list = [item.replace("\n", "") for item in self.sample_list]
-        if num is not None and self.split == "train":
-            self.sample_list = self.sample_list[:num]
-        print("total {} samples".format(len(self.sample_list)))
-
-    def __len__(self):
-        return len(self.sample_list)
-
-    def __getitem__(self, idx):
-        case = self.sample_list[idx]
-        if self.split == "train":
-            h5f = h5py.File(self._base_dir + "/data/slices/{}.h5".format(case), "r")
-        else:
-            h5f = h5py.File(self._base_dir + "/data/{}.h5".format(case), "r")
-        image = h5f["image"][:]
-        label = h5f["label"][:]
-        sample = {"image": image, "label": label}
-        if self.split == "train":
-            if None not in (self.ops_weak, self.ops_strong):
-                sample = self.transform(sample, self.ops_weak, self.ops_strong)
-            else:
-                sample = self.transform(sample)
-        sample["idx"] = idx
-        return sample
-
-
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
-#                          1. Samplers
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
-class TwoStreamBatchSampler(Sampler): #
-    """Iterate two sets of indices
-
-    An 'epoch' is one iteration through the primary indices.
-    During the epoch, the secondary indices are iterated through
-    as many times as needed.
-    """
-
-    def __init__(self, primary_indices, secondary_indices, batch_size, secondary_batch_size):
-        self.primary_indices = primary_indices
-        self.secondary_indices = secondary_indices
-        self.secondary_batch_size = secondary_batch_size
-        self.primary_batch_size = batch_size - secondary_batch_size
-
-        assert len(self.primary_indices) >= self.primary_batch_size > 0
-        assert len(self.secondary_indices) >= self.secondary_batch_size > 0
-
-    def __iter__(self):
-        primary_iter = iterate_once(self.primary_indices)
-        secondary_iter = iterate_eternally(self.secondary_indices)
-        return (
-            primary_batch + secondary_batch
-            for (primary_batch, secondary_batch) in zip(
-                grouper(primary_iter, self.primary_batch_size),
-                grouper(secondary_iter, self.secondary_batch_size),
-            )
-        )
-
-    def __len__(self):
-        return len(self.primary_indices) // self.primary_batch_size
-
-
-def iterate_once(iterable):
-    return np.random.permutation(iterable)
-
-
-def iterate_eternally(indices):
-    def infinite_shuffles():
-        while True:
-            yield np.random.permutation(indices)
-
-    return itertools.chain.from_iterable(infinite_shuffles())
-
-
-def grouper(iterable, n):
-    "Collect data into fixed-length chunks or blocks"
-    # grouper('ABCDEFG', 3) --> ABC DEF"
-    args = [iter(iterable)] * n
-    return zip(*args)
-
-
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
-#                        2. Generators
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
-class RandomGenerator(object):
-    def __init__(self, output_size):
-        self.output_size = output_size
-
-    def __call__(self, sample):
-        image, label = sample["image"], sample["label"]
-        # ind = random.randrange(0, img.shape[0])
-        # image = img[ind, ...]
-        # label = lab[ind, ...]
-        if random.random() > 0.5:
-            image, label = random_rot_flip(image, label)
-        elif random.random() > 0.5:
-            image, label = random_rotate(image, label)
-        x, y = image.shape
-        image = zoom(image, (self.output_size[0] / x, self.output_size[1] / y), order=0)
-        label = zoom(label, (self.output_size[0] / x, self.output_size[1] / y), order=0)
-        image = torch.from_numpy(image.astype(np.float32)).unsqueeze(0)
-        label = torch.from_numpy(label.astype(np.uint8))
-        sample = {"image": image, "label": label}
-        return sample
-
-
-class WeakStrongAugment(object):
-    def __init__(self, output_size):
-        self.output_size = output_size
-
-    def __call__(self, sample):
-        image_org = sample["image"].copy()
-        image, label = sample["image"], sample["label"]
-        
-        # geometry
-        if random.random() > 0.5:
-            image, label = random_rot_flip(image, label)
-        elif random.random() > 0.5:
-            image, label = random_rotate(image, label)
-        
-        # resize
-        image_org = self.resize(image_org)
-        image = self.resize(image)
-        label = self.resize(label)
-        
-        # strong augmentation is color jitter
-        image_strong = func_strong_augs(image, p_color=0.8, p_blur=0.2)
-
-        # fix dimensions
-        image_org = torch.from_numpy(image_org.astype(np.float32)).unsqueeze(0)
-        image = torch.from_numpy(image.astype(np.float32)).unsqueeze(0)
-        label = torch.from_numpy(label.astype(np.uint8))
-
-        sample = {
-            "image": image_org,
-            "image_weak": image,
-            "image_strong": image_strong,
-            "label_aug": label,
-        }
-        return sample
-
-    def resize(self, image):
-        x, y = image.shape
-        return zoom(image, (self.output_size[0] / x, self.output_size[1] / y), order=0)
+def random_rotation(image, mask=None, degrees=15):
+    """Apply random rotation to image and mask."""
+    angle = random.uniform(-degrees, degrees)
     
-
-class WeakStrongAugmentMore(object):
-    def __init__(self, output_size):
-        self.output_size = output_size
-
-    def __call__(self, sample):
-        image_org = sample["image"].copy()
-        image, label = sample["image"], sample["label"]
-        
-        # geometry
-        if random.random() > 0.5:
-            image, label = random_rot_flip(image, label)
-        # elif random.random() > 0.5:
-        #     image, label = random_rotate(image, label)
-        
-        # resize
-        image_org = self.resize(image_org)
-        image = self.resize(image)
-        label = self.resize(label)
-        
-        # strong augmentation is color jitter
-        image_strong = func_strong_augs(image, p_color=0.5, p_blur=0.2)
-        image_strong_more = func_strong_augs(image, p_color=1.0, p_blur=0.2)
-
-        # fix dimensions
-        image_org = torch.from_numpy(image_org.astype(np.float32)).unsqueeze(0)
-        image = torch.from_numpy(image.astype(np.float32)).unsqueeze(0)
-        label = torch.from_numpy(label.astype(np.uint8))
-
-        sample = {
-            "image": image_org,
-            "image_weak": image,
-            "image_strong": image_strong,
-            "image_strong_more": image_strong_more,
-            "label_aug": label,
-        }
-        return sample
-
-    def resize(self, image):
-        x, y = image.shape
-        return zoom(image, (self.output_size[0] / x, self.output_size[1] / y), order=0)
-
-
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
-#                         3. Augmentations
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
-def random_rot_flip(image, label=None):
-    k = np.random.randint(0, 4)
-    image = np.rot90(image, k)
-    axis = np.random.randint(0, 2)
-    image = np.flip(image, axis=axis).copy()
-    if label is not None:
-        label = np.rot90(label, k)
-        label = np.flip(label, axis=axis).copy()
-        return image, label
+    if isinstance(image, torch.Tensor):
+        image = TF.rotate(image, angle, interpolation=transforms.InterpolationMode.BILINEAR)
+        if mask is not None:
+            mask = TF.rotate(mask, angle, interpolation=transforms.InterpolationMode.NEAREST)
     else:
-        return image
+        image = image.rotate(angle, resample=Image.BILINEAR)
+        if mask is not None:
+            mask = mask.rotate(angle, resample=Image.NEAREST)
+    
+    return image, mask
 
 
-def random_rotate(image, label):
-    angle = np.random.randint(-20, 20)
-    image = ndimage.rotate(image, angle, order=0, reshape=False)
-    label = ndimage.rotate(label, angle, order=0, reshape=False)
-    return image, label
+def random_flip(image, mask=None, horizontal=True, vertical=False):
+    """Apply random horizontal and/or vertical flip."""
+    if horizontal and random.random() < 0.5:
+        if isinstance(image, torch.Tensor):
+            image = TF.hflip(image)
+            if mask is not None:
+                mask = TF.hflip(mask)
+        else:
+            image = TF.hflip(image)
+            if mask is not None:
+                mask = TF.hflip(mask)
+    
+    if vertical and random.random() < 0.5:
+        if isinstance(image, torch.Tensor):
+            image = TF.vflip(image)
+            if mask is not None:
+                mask = TF.vflip(mask)
+        else:
+            image = TF.vflip(image)
+            if mask is not None:
+                mask = TF.vflip(mask)
+    
+    return image, mask
 
 
-def color_jitter(image, p=1.0):
-    # if not torch.is_tensor(image):
-    #     np_to_tensor = transforms.ToTensor()
-    #     image = np_to_tensor(image)
-    # s is the strength of color distortion.
-    # s = 1.0
-    # jitter = transforms.ColorJitter(0.8 * s, 0.8 * s, 0.8 * s, 0.2 * s)
-    jitter = transforms.ColorJitter(0.5, 0.5, 0.5, 0.25)
-    if np.random.random() < p:
-        image = jitter(image)
+def random_crop(image, mask=None, size=(128, 128)):
+    """Apply random crop to image and mask."""
+    if isinstance(image, torch.Tensor):
+        h, w = image.shape[-2:]
+        th, tw = size
+        
+        if h < th or w < tw:
+            # Pad if image is smaller than crop size
+            pad_h = max(0, th - h)
+            pad_w = max(0, tw - w)
+            image = torch.nn.functional.pad(image, (0, pad_w, 0, pad_h), mode='reflect')
+            if mask is not None:
+                mask = torch.nn.functional.pad(mask, (0, pad_w, 0, pad_h), mode='reflect')
+            h, w = image.shape[-2:]
+        
+        i = random.randint(0, h - th)
+        j = random.randint(0, w - tw)
+        
+        image = image[..., i:i+th, j:j+tw]
+        if mask is not None:
+            mask = mask[..., i:i+th, j:j+tw]
+    else:
+        # Handle PIL images
+        image = TF.crop(image, *TF.get_random_crop_params(image, size))
+        if mask is not None:
+            mask = TF.crop(mask, *TF.get_random_crop_params(mask, size))
+    
+    return image, mask
+
+
+def color_jitter(image, brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1):
+    """Apply color jitter to image."""
+    if isinstance(image, torch.Tensor):
+        image = TF.adjust_brightness(image, 1.0 + random.uniform(-brightness, brightness))
+        image = TF.adjust_contrast(image, 1.0 + random.uniform(-contrast, contrast))
+        image = TF.adjust_saturation(image, 1.0 + random.uniform(-saturation, saturation))
+        image = TF.adjust_hue(image, random.uniform(-hue, hue))
+    else:
+        image = TF.adjust_brightness(image, 1.0 + random.uniform(-brightness, brightness))
+        image = TF.adjust_contrast(image, 1.0 + random.uniform(-contrast, contrast))
+        image = TF.adjust_saturation(image, 1.0 + random.uniform(-saturation, saturation))
+        image = TF.adjust_hue(image, random.uniform(-hue, hue))
+    
     return image
 
 
-def blur(img, p=0.5):
-    if random.random() < p:
-        sigma = np.random.uniform(0.1, 2.0)
-        img = img.filter(ImageFilter.GaussianBlur(radius=sigma))
-    return img
+def gaussian_blur(image, radius_range=(0.1, 2.0)):
+    """Apply Gaussian blur to image."""
+    radius = random.uniform(*radius_range)
+    
+    if isinstance(image, torch.Tensor):
+        image = TF.gaussian_blur(image, kernel_size=3, sigma=radius)
+    else:
+        image = image.filter(ImageFilter.GaussianBlur(radius=radius))
+    
+    return image
 
 
-def func_strong_augs(image, p_color=0.8, p_blur=0.5):
-    img = Image.fromarray((image * 255).astype(np.uint8))
-    img = color_jitter(img, p_color)
-    img = blur(img, p_blur)
+def elastic_transform(image, mask=None, alpha=1.0, sigma=50.0, alpha_affine=50.0):
+    """Apply elastic transform using albumentations."""
+    # Convert to numpy for albumentations
+    if isinstance(image, torch.Tensor):
+        image_np = image.permute(1, 2, 0).numpy()
+        mask_np = mask.permute(1, 2, 0).numpy() if mask is not None else None
+    else:
+        image_np = np.array(image)
+        mask_np = np.array(mask) if mask is not None else None
+    
+    # Apply elastic transform
+    transform = A.ElasticTransform(
+        alpha=alpha,
+        sigma=sigma,
+        alpha_affine=alpha_affine,
+        p=1.0
+    )
+    
+    if mask_np is not None:
+        transformed = transform(image=image_np, mask=mask_np)
+        image_np = transformed['image']
+        mask_np = transformed['mask']
+    else:
+        transformed = transform(image=image_np)
+        image_np = transformed['image']
+    
+    # Convert back to original format
+    if isinstance(image, torch.Tensor):
+        image = torch.from_numpy(image_np).permute(2, 0, 1)
+        if mask is not None:
+            mask = torch.from_numpy(mask_np).permute(2, 0, 1)
+    else:
+        image = Image.fromarray(image_np)
+        if mask is not None:
+            mask = Image.fromarray(mask_np)
+    
+    return image, mask
 
-    img = torch.from_numpy(np.array(img)).unsqueeze(0).float() / 255.0
 
-    return img
+def grid_distortion(image, mask=None, num_steps=5, distort_limit=0.3):
+    """Apply grid distortion using albumentations."""
+    # Convert to numpy for albumentations
+    if isinstance(image, torch.Tensor):
+        image_np = image.permute(1, 2, 0).numpy()
+        mask_np = mask.permute(1, 2, 0).numpy() if mask is not None else None
+    else:
+        image_np = np.array(image)
+        mask_np = np.array(mask) if mask is not None else None
+    
+    # Apply grid distortion
+    transform = A.GridDistortion(
+        num_steps=num_steps,
+        distort_limit=distort_limit,
+        p=1.0
+    )
+    
+    if mask_np is not None:
+        transformed = transform(image=image_np, mask=mask_np)
+        image_np = transformed['image']
+        mask_np = transformed['mask']
+    else:
+        transformed = transform(image=image_np)
+        image_np = transformed['image']
+    
+    # Convert back to original format
+    if isinstance(image, torch.Tensor):
+        image = torch.from_numpy(image_np).permute(2, 0, 1)
+        if mask is not None:
+            mask = torch.from_numpy(mask_np).permute(2, 0, 1)
+    else:
+        image = Image.fromarray(image_np)
+        if mask is not None:
+            mask = Image.fromarray(mask_np)
+    
+    return image, mask
+
+
+def random_brightness_contrast(image, brightness_limit=0.2, contrast_limit=0.2):
+    """Apply random brightness and contrast adjustment."""
+    # Convert to numpy for albumentations
+    if isinstance(image, torch.Tensor):
+        image_np = image.permute(1, 2, 0).numpy()
+    else:
+        image_np = np.array(image)
+    
+    # Apply brightness/contrast adjustment
+    transform = A.RandomBrightnessContrast(
+        brightness_limit=brightness_limit,
+        contrast_limit=contrast_limit,
+        p=1.0
+    )
+    
+    transformed = transform(image=image_np)
+    image_np = transformed['image']
+    
+    # Convert back to original format
+    if isinstance(image, torch.Tensor):
+        image = torch.from_numpy(image_np).permute(2, 0, 1)
+    else:
+        image = Image.fromarray(image_np)
+    
+    return image
+
+
+def random_gamma(image, gamma_limit=(80, 120)):
+    """Apply random gamma correction."""
+    gamma = random.uniform(*gamma_limit) / 100.0
+    
+    if isinstance(image, torch.Tensor):
+        image = TF.adjust_gamma(image, gamma)
+    else:
+        image = TF.adjust_gamma(image, gamma)
+    
+    return image
