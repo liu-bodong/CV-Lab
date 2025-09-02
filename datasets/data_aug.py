@@ -12,7 +12,7 @@ import random
 from typing import Tuple, Optional, Union, List
 import albumentations as A
 
-__all__ = ["random_rotation", "random_flip", "random_crop", "color_jitter"]
+__all__ = ["random_rotation", "random_flip", "random_crop", "color_jitter", "gaussian_blur", "elastic_transform", "grid_distortion", "random_brightness_contrast"]
 
 
 def random_rotation(image, mask=None, degrees=15):

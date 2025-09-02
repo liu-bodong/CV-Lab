@@ -1,0 +1,35 @@
+# example_hyper.yaml
+# This is an example of hyperparameter configs
+# DO NOT directly edit this, make a copy and modify the copy
+
+# wandb configuration
+wandb_project: your_project_name
+wandb_entity: your_wandb_entity  # Replace with your actual entity name
+wandb_mode: online  # Set to 'offline' if you want to run without logging to Weights & Biases
+
+# Model configuration
+model_type: UNet
+image_size: [256, 256]
+input_channels: 3
+output_channels: 1
+channels: [64, 128, 256, 512]
+
+# Training configuration
+batch_size: 8
+epochs: 100
+init_lr: 0.0003
+lr_rampdown_epochs: 120
+val_split: 0.2
+optimizer: Adam
+loss: BCEWithLogitsLoss
+save_after_epochs: 50
+patience: 20
+min_improvement: 0.0001
+use_amp: true
+
+# Other
+device: cuda
+gpu_monitoring: true
+data_dir: ./data/brain_MRI_Buda/kaggle_3m
+dataset: BrainMRIDataset
+save_dir: ./temp

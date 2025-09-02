@@ -18,6 +18,6 @@ __all__ = [
     'get_weak_augmentation_config',
     'get_strong_augmentation_config',
     'get_medical_augmentation_config',
-    
-    "random_rotation", "random_flip", "random_crop", "color_jitter"
+
+    "random_rotation", "random_flip", "random_crop", "color_jitter", "gaussian_blur", "elastic_transform", "grid_distortion", "random_brightness_contrast"
 ]
