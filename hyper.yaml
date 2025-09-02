@@ -1,5 +1,5 @@
 # hyper.yaml
-# This is the configuration file for training
+# This is the actual config file for training
 
 # wandb configuration
 wandb_project: unet
