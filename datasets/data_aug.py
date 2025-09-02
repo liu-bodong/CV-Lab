@@ -125,7 +125,7 @@ def elastic_transform(image, mask=None, alpha=1.0, sigma=50.0, alpha_affine=50.0
         mask_np = np.array(mask) if mask is not None else None
     
     # Apply elastic transform
-    transform = transforms.ElasticTransform(
+    transform = A.ElasticTransform(
         alpha=alpha,
         sigma=sigma,
     )
