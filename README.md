@@ -10,7 +10,7 @@ This repository provides tools for image segmentation using deep learning. It fe
 - **Multiple Architectures**: U-Net and Attention U-Net implementations
 - **Modular Design**: Organized code structure with separate modules for datasets, networks, and utilities
 - **Dynamic Configuration**: Reflection mechanism for automatic configuration loading and scalability
-- **Configuration Management**: YAML-based hyperparameter configuration
+- **Hyperparameter Management**: YAML-based hyperparameter configuration
 - **Training Pipeline**: Standard training loop with validation and checkpointing
 - **Experiment Tracking**: Optional Weights & Biases integration
 - **Model Export**: ONNX format support for deployment
@@ -18,111 +18,33 @@ This repository provides tools for image segmentation using deep learning. It fe
 ## Installation
 
 ### Option 1: Local Installation
-1. **Clone the repository:**
+
    ```bash
    git clone https://github.com/liu-bodong/CV-Lab.git
    cd CV-Lab
-   ```
-
-2. **Install dependencies:**
-   ```bash
    pip install -r requirements.txt
    ```
 
-### Option 2: Docker (Recommended)
-For a consistent environment with GPU support:
+### Option 2: Docker
+You are also welcome to use the pre-built Docker images for a consistent environment. However, as this repo is still under active development, we recommend installing locally to prevent potential dependency or compatibility issues.
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/liu-bodong/CV-Lab.git
-   cd CV-Lab
-   ```
+- **GitHub Container Registry:**  
+   [`ghcr.io/liu-bodong/cv-lab:latest`](https://github.com/liu-bodong/CV-Lab/pkgs/container/cv-lab)
 
-2. **Using Docker Compose (Recommended):**
-   ```bash
-   docker-compose up -d dev
-   docker-compose exec dev bash
-   ```
+- **Docker Hub:**  
+   [`liubodong/cv-lab:latest`](https://hub.docker.com/r/liubodong/cv-lab)
 
-3. **Using Docker directly:**
-   ```bash
-   # Build the image
-   docker build -t cv-lab .
-   
-   # Run with GPU support
-   docker run --gpus all -v $(pwd):/app -it cv-lab bash
-   ```
 
-### Option 3: Pre-built Docker Images
-Use pre-built images without building locally:
-
-1. **From GitHub Container Registry:**
-   ```bash
-   # Pull the image
-   docker pull ghcr.io/liu-bodong/cv-lab:latest
-   
-   # Clone repository for code and configs
-   git clone https://github.com/liu-bodong/CV-Lab.git
-   cd CV-Lab
-   
-   # Run with pre-built image
-   docker run --gpus all -v $(pwd):/app -it ghcr.io/liu-bodong/cv-lab:latest bash
-   ```
-
-2. **From Docker Hub:**
-   ```bash
-   # Pull the image
-   docker pull liubodong/cv-lab:latest
-
-   # Clone repository for code and configs
-   git clone https://github.com/liu-bodong/CV-Lab.git
-   cd CV-Lab
-   
-   # Run with pre-built image
-   docker run --gpus all -v $(pwd):/app -it liubodong/cv-lab:latest bash
-   ```
-
-3. **Using Docker Compose with pre-built image:**
-   ```yaml
-   # Modify docker-compose.yml to use pre-built image:
-   services:
-     dev:
-       image: ghcr.io/liu-bodong/cv-lab:latest
-       # Remove the 'build' section
-   ```
-
-**Benefits of pre-built images:**
-- No build time required
-- Consistent environment across different machines
-- Faster setup for CI/CD pipelines
-- Pre-tested configurations
-
-### Local Build vs Pre-built Images
-4. **Start training:**
+**Start training:**
    ```bash
    python train.py --config hyper.yaml
    ```
 
-### Docker Configuration
-- **Base Image**: PyTorch 2.7.1 with CUDA 12.8 and cuDNN 9
-- **GPU Support**: Automatic GPU detection and usage
-- **Volume Mounting**: Code, data, and outputs are mounted for persistence
-- **Development**: Interactive development with live code changes
-- **Pre-built Images**: Available on GitHub Container Registry and Docker Hub
-- **Image Options**: Build locally or use pre-built images for faster setup
-
 ## Requirements
-
-### For Local Installation:
-- Python 3.8+
+- Python 3.10+
 - PyTorch 1.9.0+
 - torchvision 0.10.0+
 - CUDA (optional, for GPU acceleration)
-
-### For Docker Installation:
-- Docker
-- Docker Compose
-- NVIDIA Docker runtime (for GPU support)
 
 > **Note**: Docker installation includes all Python dependencies and CUDA support automatically.
 
@@ -131,6 +53,7 @@ Each sub-directory functions as a module with specified export components to be 
 
 ```
 CV-Lab/
+├── data/             # Raw data folder
 ├── datasets/         # Dataset classes and data loading utilities
 ├── networks/         # Model architectures (U-Net, Attention U-Net)
 ├── utils/            # Training utilities (logging, metrics, loss functions)
@@ -143,7 +66,7 @@ CV-Lab/
 ## Quick Start
 
 ### 1. Prepare Your Dataset
-Implement your dataset class in `datasets/` or use the provided datasets as a reference. The framework expects dataset classes to return image-mask pairs.
+Implement your dataset class in `datasets/` or use the provided datasets as a reference. The framework expects dataset classes to return image-mask pairs. You can use or add data augmentations in `datasets/data_aug.py`. And `datasets/data_utils.py` for any utility functions.
 
 ### 2. Configure Training
 Edit `hyper.yaml` to set your parameters. Note that the framework uses a dynamic configuration system implemented by reflection in python. Each sub-module exports classes and methods to be used. Please pay attention to the exact naming of imported components. Refer to the following example for a glimpse of hyper parameter editing:
@@ -197,50 +120,13 @@ runs/[model_name]_[timestamp]/
 An example of plot.png:
 ![Training Example](https://github.com/liu-bodong/CV-Lab/blob/main/runs/unet_0727_1906/plot.png)
 
-## Docker Development Workflow
+Note that you could edit and run `notebooks/plot_csv.ipynb` to generate custom plots from the logged metrics.
 
-### Development Container
-The Docker setup is optimized for development with live code changes:
-
-```bash
-# Start development container
-docker-compose up -d dev
-
-# Enter container shell
-docker-compose exec dev bash
-
-# Your code changes in the host are immediately reflected in the container
-# Data and outputs persist in mounted volumes
-```
-
-### Volume Mounts
+### Docker Volume Mounts
 - **Code**: `.:/app` - Live code editing
 - **Data**: `./data:/app/data` - Persistent dataset storage  
 - **Outputs**: `./runs:/app/runs` - Training results persist on host
 - **Wandb**: `./wandb:/app/wandb` - Experiment tracking logs
-
-### GPU Support
-The container automatically detects and uses available GPUs:
-```yaml
-deploy:
-  resources:
-    reservations:
-      devices:
-        - driver: nvidia
-          capabilities: [gpu]
-```
-
-### Container Management
-```bash
-# Stop container
-docker-compose down
-
-# Rebuild after requirements.txt changes
-docker-compose build dev
-
-# View logs
-docker-compose logs dev
-```
 
 ## Available Models
 
@@ -249,16 +135,11 @@ Currently, the framework supports the following models:
 - MobileNetV1
 - U-Net
 - Attention U-Net
-- more models are under development, feel free to add your own too!
+- more models are under development
 
 ## Datasets
 
-The framework includes a `BrainMRIDataset` class corresponding to a [dataset on kaggle](https://www.kaggle.com/datasets/mateuszbuda/lgg-mri-segmentation) as an example implementation. You can create custom dataset classes for your needs.
-
-### BrainMRIDataset
-- Loads image-mask pairs from organized directory structure
-- Applies separate transforms for images and masks
-- Supports common medical image formats
+The framework includes a `BrainMRIDataset` class corresponding to [a dataset on kaggle by M. Buda](https://www.kaggle.com/datasets/mateuszbuda/lgg-mri-segmentation) as an example implementation. You can create custom dataset classes for your needs.
 
 ## Configuration Options
 
