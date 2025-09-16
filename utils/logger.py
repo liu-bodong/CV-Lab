@@ -18,63 +18,17 @@ import numpy as np
 # Add src and networks to path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from networks.unet import UNet
-from networks.attention_unet import AttnUNet
+import networks
+
 from metrics import dice_loss, dice_coefficient
 
 __all__ = ['log_results']
 
-def log_results(config: dict, history: list, best_model_path: str, last_model_path: str):
+
+def plot(metrics_df: pd.DataFrame, output_dir: str = '.', config: dict = None, best_epoch: int = None, best_metric: float = None):
     """
-    Logs training results to a unique directory.
-
-    Args:
-        config (dict): Configuration dictionary.
-        history (list): List of metrics per epoch.
-        best_model_path (str): Path to the best model checkpoint.
-        last_model_path (str): Path to the last model checkpoint.
+    Plots the metrics
     """
-    if not history:
-        print("No history to log. Exiting.")
-        return
-
-    # Create a unique directory for this run
-    date = datetime.now().strftime("%m%d_%H%M")
-    run_name = f"{config['model_type']}_{date}"
-    output_dir = os.path.join(config.get('log_dir', 'runs'), run_name)
-    os.makedirs(output_dir, exist_ok=True)
-    print(f"Logging results to {output_dir}")
-
-    # 1. Log model summary, param count, and FLOPs
-    model_type = config['model_type']
-    if model_type == "unet":
-        model = UNet(in_channels=config['input_channels'], out_channels=config['output_channels'], channels=config['channels'])
-    else:
-        model = AttnUNet(in_channels=config['input_channels'], out_channels=config['output_channels'], channels=config['channels'])
-    
-    dummy_input = torch.randn(1, config['input_channels'], *tuple(config['image_size']))
-    flops, params = profile(model, inputs=(dummy_input,), verbose=False)
-    # --- Plotting code moved to notebook for easier adjustment ---
-    # (See notebook for interactive plotting)
-    # Find best epoch
-    best_epoch_metrics = max(history, key=lambda x: x['val_dice'])
-    
-    summary = config.copy()
-    summary['param_count'] = f"{params/1e6:.2f}M"
-    summary['flops'] = f"{flops/1e9:.2f}G"
-    summary['best_epoch'] = best_epoch_metrics['epoch']
-    summary['best_val_dice'] = f"{best_epoch_metrics['val_dice']:.4f}"
-    summary['last_epoch'] = history[-1]['epoch']
-    summary['last_val_dice'] = f"{history[-1]['val_dice']:.4f}"
-
-    with open(os.path.join(output_dir, 'summary.yaml'), 'w') as f:
-        yaml.dump(summary, f, sort_keys=False)
-
-    # 2. Log metrics to CSV
-    metrics_df = pd.DataFrame(history)
-    metrics_df.to_csv(os.path.join(output_dir, 'metrics.csv'), index=False)
-
-    # 3. Plot and save metrics
     plt.style.use('petroff10')
     
     x   = metrics_df['epoch']
@@ -114,8 +68,8 @@ def log_results(config: dict, history: list, best_model_path: str, last_model_pa
 
 
     # Mark best epoch
-    ax2.axvline(x=best_epoch_metrics['epoch'], color='seagreen', linestyle='--', linewidth=1.8, label=f"Best Epoch ({best_epoch_metrics['epoch']})")
-    ax2.scatter(best_epoch_metrics['epoch'], best_epoch_metrics['val_dice'], color='sandybrown', marker='*', s=200, zorder=10, label=f"Best Dice: {best_epoch_metrics['val_dice']:.4f}")
+    ax2.axvline(x=best_epoch, color='seagreen', linestyle='--', linewidth=1.8, label=f"Best Epoch ({best_epoch})")
+    ax2.scatter(best_epoch, best_metric, color='sandybrown', marker='*', s=200, zorder=10, label=f"Best Dice: {best_metric:.4f}")
 
     # Set spines color and linewidth
     ax2.spines['left'].set_color('brown')
@@ -139,6 +93,62 @@ def log_results(config: dict, history: list, best_model_path: str, last_model_pa
               fontsize=14, pad=10)
     plt.savefig(os.path.join(output_dir, 'plot.png'))
     plt.close()
+
+
+def log_results(config: dict, history: list, best_model_path: str, last_model_path: str):
+    """
+    Logs training results to a unique directory.
+
+    Args:
+        config (dict): Configuration dictionary.
+        history (list): List of metrics per epoch.
+        best_model_path (str): Path to the best model checkpoint.
+        last_model_path (str): Path to the last model checkpoint.
+    """
+    if not history:
+        print("No history to log. Exiting.")
+        return
+
+    # Create a unique directory for this run
+    date = datetime.now().strftime("%m%d_%H%M")
+    run_name = f"{config['model_type']}_{date}"
+    output_dir = os.path.join(config.get('log_dir', 'runs'), run_name)
+    os.makedirs(output_dir, exist_ok=True)
+    print(f"Logging results to {output_dir}")
+
+    # 1. Log model summary, param count, and FLOPs   
+    model = getattr(networks, config['model_type'])(
+        in_channels=config['input_channels'],
+        out_channels=config['output_channels'],
+        channels=config['channels'])
+
+    dummy_input = torch.randn(1, config['input_channels'], *tuple(config['image_size']))
+    flops, params = profile(model, inputs=(dummy_input,), verbose=False)
+    
+    # (See notebook for interactive plotting)
+    # Find best epoch
+    best_epoch_metrics = max(history, key=lambda x: x['val_dice'])
+    
+    summary = config.copy()
+    summary['param_count'] = f"{params/1e6:.2f}M"
+    summary['flops'] = f"{flops/1e9:.2f}G"
+    summary['best_epoch'] = best_epoch_metrics['epoch']
+    summary['best_val_dice'] = f"{best_epoch_metrics['val_dice']:.4f}"
+    summary['last_epoch'] = history[-1]['epoch']
+    summary['last_val_dice'] = f"{history[-1]['val_dice']:.4f}"
+
+    with open(os.path.join(output_dir, 'summary.yaml'), 'w') as f:
+        yaml.dump(summary, f, sort_keys=False)
+
+
+    # 2. Log metrics to CSV
+    metrics_df = pd.DataFrame(history)
+    metrics_df.to_csv(os.path.join(output_dir, 'metrics.csv'), index=False)
+
+
+    # 3. Plot and save metrics
+    plot(metrics_df)
+
 
     # 4. Save the best model
     if best_model_path and os.path.exists(best_model_path):
