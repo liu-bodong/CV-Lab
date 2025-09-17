@@ -19,13 +19,12 @@ import numpy as np
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 import networks
-
-from metrics import dice_loss, dice_coefficient
+import utils
 
 __all__ = ['log_results']
 
 
-def plot(metrics_df: pd.DataFrame, output_dir: str = '.', config: dict = None, best_epoch: int = None, best_metric: float = None):
+def save_plot(metrics_df: pd.DataFrame, output_dir: str = '.', config: dict = None, best_epoch: int = None, best_metric: float = None):
     """
     Plots the metrics
     """
@@ -95,28 +94,10 @@ def plot(metrics_df: pd.DataFrame, output_dir: str = '.', config: dict = None, b
     plt.close()
 
 
-def log_results(config: dict, history: list, best_model_path: str, last_model_path: str):
+def write_summary(config: dict, history: list, output_dir: str):
     """
-    Logs training results to a unique directory.
-
-    Args:
-        config (dict): Configuration dictionary.
-        history (list): List of metrics per epoch.
-        best_model_path (str): Path to the best model checkpoint.
-        last_model_path (str): Path to the last model checkpoint.
+    Writes a summary dictionary to a YAML file.
     """
-    if not history:
-        print("No history to log. Exiting.")
-        return
-
-    # Create a unique directory for this run
-    date = datetime.now().strftime("%m%d_%H%M")
-    run_name = f"{config['model_type']}_{date}"
-    output_dir = os.path.join(config.get('log_dir', 'runs'), run_name)
-    os.makedirs(output_dir, exist_ok=True)
-    print(f"Logging results to {output_dir}")
-
-    # 1. Log model summary, param count, and FLOPs   
     model = getattr(networks, config['model_type'])(
         in_channels=config['input_channels'],
         out_channels=config['output_channels'],
@@ -136,9 +117,35 @@ def log_results(config: dict, history: list, best_model_path: str, last_model_pa
     summary['best_val_dice'] = f"{best_epoch_metrics['val_dice']:.4f}"
     summary['last_epoch'] = history[-1]['epoch']
     summary['last_val_dice'] = f"{history[-1]['val_dice']:.4f}"
-
+    
     with open(os.path.join(output_dir, 'summary.yaml'), 'w') as f:
         yaml.dump(summary, f, sort_keys=False)
+
+
+def log_results(config: dict, history: list, best_model_path: str, last_model_path: str):
+    """
+    Logs training results to a unique directory.
+
+    Args:
+        config (dict): Configuration dictionary.
+        history (list): List of metrics per epoch.
+        best_model_path (str): Path to the best model checkpoint.
+        last_model_path (str): Path to the last model checkpoint.
+    """
+    if not history:
+        print("No history to log. Exiting.")
+        return
+
+    # 0. Create a unique directory for this run
+    date = datetime.now().strftime("%m%d_%H%M")
+    run_name = f"{config['model_type']}_{date}"
+    output_dir = os.path.join(config.get('log_dir', 'runs'), run_name)
+    os.makedirs(output_dir, exist_ok=True)
+    print(f"Logging results to {output_dir}")
+
+
+    # 1. Log model summary, param count, and FLOPs   
+    write_summary(config, history, output_dir)
 
 
     # 2. Log metrics to CSV
@@ -147,7 +154,7 @@ def log_results(config: dict, history: list, best_model_path: str, last_model_pa
 
 
     # 3. Plot and save metrics
-    plot(metrics_df)
+    save_plot(metrics_df)
 
 
     # 4. Save the best model
